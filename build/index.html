@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Companion Banco Imobiliário</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-gold: #f1c40f;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --text-color: #f0f6fc;
+            --subtext: #8b949e;
+            --border-color: #30363d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 16px; overflow: hidden; }
+        .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 14px; }
+        header { text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+        h1 { font-size: 1.4rem; color: var(--accent-gold); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        p.subtitle { font-size: 0.8rem; color: var(--subtext); margin-top: 4px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+        .balance-card { text-align: center; background: linear-gradient(135deg, #161b22 0%, #1c232d 100%); border: 1px solid #38444d; }
+        .balance-title { font-size: 0.75rem; color: var(--subtext); text-transform: uppercase; letter-spacing: 1px; }
+        .balance-value { font-size: 2.2rem; font-weight: bold; color: var(--accent-green); margin: 6px 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 14px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-gold { background: linear-gradient(135deg, #f39c12, #d35400); color: #fff; border: none; }
+        .btn-green { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; border: none; }
+        .btn-large { grid-column: span 2; padding: 16px; font-size: 1.1rem; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        label { font-size: 0.85rem; color: var(--subtext); }
+        input, select { background: #0d1117; border: 1px solid var(--border-color); color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; }
+        .tx-history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .tx-item { font-size: 0.85rem; padding: 8px 12px; background: #0d1117; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
+        .hidden { display: none !important; }
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .quick-amounts { display: flex; gap: 6px; }
+        .quick-amounts button { flex: 1; padding: 8px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 BANCO IMOBILIÁRIO</h1>
+            <p class="subtitle">Companion Digital para Tabuleiro Físico</p>
+        </header>
+
+        <!-- LOBBY SCREEN -->
+        <div id="screen-lobby" class="card">
+            <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                <button id="btn-tab-join" class="btn-green" style="flex:1" onclick="switchTab('join')">🎮 Entrar na Mesa</button>
+                <button id="btn-tab-create" style="flex:1" onclick="switchTab('create')">👑 Criar Mesa</button>
+            </div>
+
+            <div id="form-join" class="input-group">
+                <label>PIN da Mesa:</label>
+                <input type="number" id="join-pin" placeholder="Ex: 7492">
+                <label>Seu Nome:</label>
+                <input type="text" id="join-name" placeholder="Ex: Igor">
+                <button class="btn-green" style="margin-top: 10px;" onclick="joinRoom()">🚀 Entrar na Mesa</button>
+            </div>
+
+            <div id="form-create" class="input-group hidden">
+                <label>Nome do Banqueiro:</label>
+                <input type="text" id="create-banker" placeholder="Ex: Banqueiro Igor">
+                <label>Saldo Inicial (R$):</label>
+                <input type="number" id="create-cash" value="25000">
+                <button class="btn-gold" style="margin-top: 10px;" onclick="createRoom()">👑 Iniciar Nova Mesa</button>
+            </div>
+        </div>
+
+        <!-- PLAYER DASHBOARD -->
+        <div id="screen-player" class="hidden" style="display: flex; flex-direction: column; gap: 12px; height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="player-display-name" style="font-weight: bold;">-</span>
+                <span id="room-pin-display" style="color: var(--accent-gold); font-size: 0.9rem;">Mesa #----</span>
+            </div>
+
+            <div class="card balance-card">
+                <div class="balance-title">Seu Saldo Atual</div>
+                <div class="balance-value" id="balance-amount">R$ 25.000</div>
+            </div>
+
+            <button class="btn-green btn-large" onclick="passGO()">⚡ Ponto de Partida (+R$ 2.000)</button>
+
+            <div class="grid-2">
+                <button onclick="openModal('PAY_PLAYER')">💸 Pagar Jogador</button>
+                <button onclick="openModal('PAY_BANK')">🏦 Pagar ao Banco</button>
+                <button onclick="openModal('RECEIVE_BANK')" style="grid-column: span 2;">💰 Receber do Banco</button>
+            </div>
+
+            <div class="card tx-history" id="tx-feed-player">
+                <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa:</div>
+            </div>
+        </div>
+
+        <!-- TRANSACTION MODAL -->
+        <div id="modal-tx" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="modal-title">💸 Realizar Transferência</h3>
+                <select id="modal-recipient" class="hidden"></select>
+                <input type="number" id="modal-amount" placeholder="Valor (R$)">
+                <div class="quick-amounts">
+                    <button onclick="addAmount(50)">+50</button>
+                    <button onclick="addAmount(100)">+100</button>
+                    <button onclick="addAmount(200)">+200</button>
+                    <button onclick="addAmount(500)">+500</button>
+                    <button onclick="addAmount(2000)">+2k</button>
+                </div>
+                <input type="text" id="modal-note" placeholder="Motivo (opcional, ex: Aluguel)">
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button style="flex:1" onclick="closeModal()">Cancelar</button>
+                    <button class="btn-green" style="flex:1" onclick="confirmTransfer()">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            pin: '',
+            playerId: '',
+            playerName: '',
+            balance: 25000,
+            players: {},
+            transactions: []
+        };
+
+        function playSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1318, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e){}
+        }
+
+        function formatMoney(val) {
+            return 'R$ ' + val.toLocaleString('pt-BR');
+        }
+
+        function switchTab(tab) {
+            document.getElementById('form-join').classList.toggle('hidden', tab !== 'join');
+            document.getElementById('form-create').classList.toggle('hidden', tab !== 'create');
+            document.getElementById('btn-tab-join').className = tab === 'join' ? 'btn-green' : '';
+            document.getElementById('btn-tab-create').className = tab === 'create' ? 'btn-gold' : '';
+        }
+
+        function createRoom() {
+            const banker = document.getElementById('create-banker').value || 'Banqueiro';
+            const cash = parseInt(document.getElementById('create-cash').value) || 25000;
+            state.pin = Math.floor(1000 + Math.random() * 9000).toString();
+            state.playerId = 'p_banker';
+            state.playerName = banker + ' (Banqueiro)';
+            state.balance = cash;
+            state.players[state.playerId] = { name: state.playerName, balance: cash };
+            enterGame();
+        }
+
+        function joinRoom() {
+            const pin = document.getElementById('join-pin').value;
+            const name = document.getElementById('join-name').value;
+            if (!pin || !name) return alert('Preencha o PIN e seu nome!');
+            state.pin = pin;
+            state.playerId = 'p_' + Date.now();
+            state.playerName = name;
+            state.balance = 25000;
+            state.players[state.playerId] = { name: name, balance: 25000 };
+            enterGame();
+        }
+
+        function enterGame() {
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-player').classList.remove('hidden');
+            document.getElementById('player-display-name').innerText = state.playerName;
+            document.getElementById('room-pin-display').innerText = 'Mesa #' + state.pin;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('balance-amount').innerText = formatMoney(state.balance);
+            const feed = document.getElementById('tx-feed-player');
+            feed.innerHTML = '<div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa:</div>';
+            state.transactions.slice().reverse().forEach(tx => {
+                const item = document.createElement('div');
+                item.className = 'tx-item';
+                item.innerText = `${tx.from} ➔ ${tx.to}: ${formatMoney(tx.amount)} ${tx.note ? '('+tx.note+')' : ''}`;
+                feed.appendChild(item);
+            });
+        }
+
+        function passGO() {
+            state.balance += 2000;
+            state.transactions.push({ from: '🏦 Banco', to: state.playerName, amount: 2000, note: 'Passou no Ponto de Partida' });
+            playSound();
+            updateUI();
+        }
+
+        let currentModalMode = '';
+        function openModal(mode) {
+            currentModalMode = mode;
+            document.getElementById('modal-tx').classList.remove('hidden');
+            const select = document.getElementById('modal-recipient');
+            document.getElementById('modal-amount').value = '';
+            document.getElementById('modal-note').value = '';
+            
+            if (mode === 'PAY_PLAYER') {
+                document.getElementById('modal-title').innerText = '💸 Pagar Jogador';
+                select.classList.remove('hidden');
+                select.innerHTML = '<option value="Outro Jogador">Outro Jogador Mesa #' + state.pin + '</option>';
+            } else if (mode === 'PAY_BANK') {
+                document.getElementById('modal-title').innerText = '🏦 Pagar ao Banco';
+                select.classList.add('hidden');
+            } else if (mode === 'RECEIVE_BANK') {
+                document.getElementById('modal-title').innerText = '💰 Receber do Banco';
+                select.classList.add('hidden');
+            }
+        }
+
+        function addAmount(val) {
+            const input = document.getElementById('modal-amount');
+            input.value = (parseInt(input.value) || 0) + val;
+        }
+
+        function closeModal() {
+            document.getElementById('modal-tx').classList.add('hidden');
+        }
+
+        function confirmTransfer() {
+            const amount = parseInt(document.getElementById('modal-amount').value);
+            const note = document.getElementById('modal-note').value;
+            if (!amount || amount <= 0) return alert('Informe um valor válido!');
+            
+            if (currentModalMode === 'PAY_PLAYER') {
+                if (state.balance < amount) return alert('Saldo insuficiente!');
+                state.balance -= amount;
+                state.transactions.push({ from: state.playerName, to: 'Outro Jogador', amount, note });
+            } else if (currentModalMode === 'PAY_BANK') {
+                if (state.balance < amount) return alert('Saldo insuficiente!');
+                state.balance -= amount;
+                state.transactions.push({ from: state.playerName, to: '🏦 Banco', amount, note: note || 'Pagamento ao Banco' });
+            } else if (currentModalMode === 'RECEIVE_BANK') {
+                state.balance += amount;
+                state.transactions.push({ from: '🏦 Banco', to: state.playerName, amount, note: note || 'Recebido do Banco' });
+            }
+            playSound();
+            closeModal();
+            updateUI();
+        }
+    </script>
+</body>
+</html>
