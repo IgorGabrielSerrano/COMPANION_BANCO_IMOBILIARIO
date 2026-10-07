@@ -210,12 +210,17 @@
             <div class="modal-content">
                 <h3 id="prop-modal-title">🏠 Comprar Nova Posse</h3>
                 <input type="hidden" id="prop-edit-index" value="-1">
+                <input type="hidden" id="prop-edit-id" value="">
 
                 <label>Nome do Imóvel / Posse:</label>
                 <input type="text" id="prop-name-input" placeholder="Ex: Av. Paulista, Maracanã, Cia Eletricidade">
 
                 <label id="lbl-buy-price">Preço de Compra (Pago ao Banco 🏦):</label>
                 <input type="number" id="prop-price-input" placeholder="Ex: 3500">
+
+                <label for="prop-color-input">Cor do grupo da posse:</label>
+                <select id="prop-color-input" onchange="previewPropertyColor()"></select>
+                <div id="prop-color-preview" class="property-chip">🏠 Cor do texto da posse</div>
 
                 <label>Valor do Aluguel cobrado de outros jogadores (R$):</label>
                 <input type="number" id="prop-rent-input" placeholder="Ex: 350">
@@ -294,6 +299,15 @@
         let hostConn = null;
         let receivedInitialState = false;
         let previousVisualState = null;
+        const PROPERTY_COLORS = {
+            '#f1c40f': 'Amarelo', '#ed7272': 'Vermelho', '#67c587': 'Verde',
+            '#6b9fff': 'Azul', '#80d8ef': 'Azul-claro', '#f6a04d': 'Laranja',
+            '#c39bf2': 'Roxo', '#ef91c7': 'Rosa', '#bc946e': 'Marrom', '#ecf0f1': 'Branco / Companhia'
+        };
+        function propertyColor(color) { return Object.hasOwn(PROPERTY_COLORS, color) ? color : '#f1c40f'; }
+        function escapeHtml(text) {
+            return String(text).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+        }
         const handledCommands = new Set();
         const clientId = crypto.randomUUID();
         const channel = new BroadcastChannel('banco_imobiliario_channel');
@@ -494,6 +508,14 @@
         }
 
         function enterGame(isRestored = false) {
+            if (state.isBanker) {
+                for (const player of Object.values(state.players)) {
+                    for (const prop of player.properties || []) {
+                        prop.id ||= crypto.randomUUID();
+                        prop.color = propertyColor(prop.color);
+                    }
+                }
+            }
             document.getElementById('screen-lobby').classList.add('hidden');
             document.getElementById('screen-player').classList.remove('hidden');
             document.getElementById('player-display-name').innerText = state.playerName;
@@ -564,6 +586,12 @@
 
         function broadcastState() {
             if (!state.isBanker) return;
+            for (const player of Object.values(state.players)) {
+                for (const prop of player.properties || []) {
+                    prop.id ||= crypto.randomUUID();
+                    prop.color = propertyColor(prop.color);
+                }
+            }
             saveSession();
             const msg = { type: 'SYNC', pin: state.pin, sender: clientId,
                 players: state.players, transactions: state.transactions };
@@ -612,19 +640,39 @@
                 if (data.type === 'BUY_PROPERTY') {
                     if (tx.fromId !== data.actorId || tx.toId !== 'BANK' ||
                         !data.property || !data.property.name || !Number.isSafeInteger(data.property.rent) || data.property.rent <= 0) return;
-                    (actor.properties ||= []).push({ name: data.property.name, price: tx.amount, rent: data.property.rent });
+                    (actor.properties ||= []).push({ id: crypto.randomUUID(), name: data.property.name,
+                        price: tx.amount, rent: data.property.rent, color: propertyColor(data.property.color) });
                 }
                 if (from) from.balance -= tx.amount;
                 if (to) to.balance += tx.amount;
                 state.transactions.push({ ...tx, from: from ? from.name : '🏦 Banco', to: to ? to.name : '🏦 Banco' });
             } else if (data.type === 'EDIT_PROPERTY') {
-                const prop = (actor.properties || [])[data.index];
+                const prop = (actor.properties || []).find(p => p.id === data.propertyId);
                 if (!prop || !data.name || !Number.isSafeInteger(data.rent) || data.rent <= 0) return;
                 prop.name = data.name;
                 prop.rent = data.rent;
-            } else if (data.type === 'DELETE_PROPERTY') {
-                if (!(actor.properties || [])[data.index]) return;
-                actor.properties.splice(data.index, 1);
+                prop.color = propertyColor(data.color);
+            } else if (data.type === 'MORTGAGE_PROPERTY' || data.type === 'SELL_PROPERTY') {
+                const index = (actor.properties || []).findIndex(p => p.id === data.propertyId);
+                if (index < 0) return;
+                const prop = actor.properties[index];
+                if (data.type === 'MORTGAGE_PROPERTY') {
+                    if (!Number.isSafeInteger(prop.price) || prop.price <= 0) return;
+                    const amount = prop.price / 2;
+                    actor.balance += amount;
+                    actor.properties.splice(index, 1);
+                    state.transactions.push({ fromId: 'BANK', toId: data.actorId, from: '🏦 Banco',
+                        to: actor.name, amount, note: 'Hipoteca: ' + prop.name });
+                } else {
+                    const buyer = state.players[data.buyerId];
+                    if (!buyer || data.buyerId === data.actorId || !Number.isSafeInteger(data.amount) || data.amount <= 0 || buyer.balance < data.amount) return;
+                    buyer.balance -= data.amount;
+                    actor.balance += data.amount;
+                    actor.properties.splice(index, 1);
+                    (buyer.properties ||= []).push(prop);
+                    state.transactions.push({ fromId: data.buyerId, toId: data.actorId, from: buyer.name,
+                        to: actor.name, amount: data.amount, note: 'Compra de posse: ' + prop.name });
+                }
             } else if (data.type === 'JAIL') {
                 if (data.action === 'ENTER' && !actor.jailed) {
                     actor.jailed = true;
@@ -698,7 +746,13 @@
                 props.forEach((p, idx) => {
                     const chip = document.createElement('div');
                     chip.className = 'property-chip';
-                    chip.innerHTML = `🏠 ${p.name} (Alg: ${formatMoney(p.rent)}) <span onclick="editProperty(${idx})" style="cursor:pointer; margin-left:4px;">✏️</span> <span onclick="deleteProperty(${idx})" style="cursor:pointer; color:var(--accent-red); margin-left:2px;">❌</span>`;
+                    chip.style.color = propertyColor(p.color);
+                    chip.innerHTML = `<div>🏠 ${escapeHtml(p.name)} (Alg: ${formatMoney(p.rent)})</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                            <button class="btn-small" onclick="editProperty(${idx})">✏️ Editar</button>
+                            <button class="btn-small" onclick="openTransferModal(${idx})">🔄 Transferir</button>
+                            <button class="btn-small" onclick="deleteProperty(${idx})">🏦 Hipotecar</button>
+                        </div>`;
                     myPropsList.appendChild(chip);
                 });
             }
@@ -717,12 +771,12 @@
                 
                 let propsHtml = '';
                 if (p.properties && p.properties.length > 0) {
-                    propsHtml = '<div style="margin-top:2px;">' + p.properties.map(pr => `<span class="property-chip">🏠 ${pr.name} (Alg: ${formatMoney(pr.rent)})</span>`).join('') + '</div>';
+                    propsHtml = '<div style="margin-top:2px;">' + p.properties.map(pr => `<span class="property-chip" style="color:${propertyColor(pr.color)}">🏠 ${escapeHtml(pr.name)} (Alg: ${formatMoney(pr.rent)})</span>`).join('') + '</div>';
                 }
 
                 row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; width:100%;">
-                        <span><b>${p.name}</b> ${pId === state.playerId ? ' (Você)' : ''}<br><small>${p.jailed ? '🔒 Preso: ' + (p.jailRounds || 0) + '/3' : '🔓 Livre: 0/3'}</small></span>
+                        <span><b>${escapeHtml(p.name)}</b> ${pId === state.playerId ? ' (Você)' : ''}<br><small>${p.jailed ? '🔒 Preso: ' + (p.jailRounds || 0) + '/3' : '🔓 Livre: 0/3'}</small></span>
                         <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
                     </div>
                     ${propsHtml}
@@ -770,7 +824,12 @@
         function openPropertyModal(editIdx = -1) {
             document.getElementById('modal-property-editor').classList.remove('hidden');
             document.getElementById('prop-edit-index').value = editIdx;
+            document.getElementById('prop-edit-id').value = state.players[state.playerId]?.properties?.[editIdx]?.id || '';
             
+            const colorSelect = document.getElementById('prop-color-input');
+            colorSelect.innerHTML = Object.entries(PROPERTY_COLORS).map(([value, name]) => `<option value="${value}">${name}</option>`).join('');
+            colorSelect.value = propertyColor((state.players[state.playerId].properties || [])[editIdx]?.color);
+            previewPropertyColor();
             const lblPrice = document.getElementById('lbl-buy-price');
             const priceInput = document.getElementById('prop-price-input');
             const btnSave = document.getElementById('btn-save-prop');
@@ -807,16 +866,17 @@
             const price = Number(document.getElementById('prop-price-input').value);
             const rent = Number(document.getElementById('prop-rent-input').value);
             const index = Number(document.getElementById('prop-edit-index').value);
+            const color = propertyColor(document.getElementById('prop-color-input').value);
             const me = state.players[state.playerId];
             if (!me) return;
             if (!name || !Number.isSafeInteger(rent) || rent <= 0) return alert('Informe o nome e um aluguel válido!');
             if (index < 0) {
                 if (!Number.isSafeInteger(price) || price <= 0) return alert('Informe um preço válido!');
                 if (me.balance < price) return alert('Saldo insuficiente para comprar esta posse!');
-                sendToHost({ type: 'BUY_PROPERTY', property: { name, rent }, tx: {
+                sendToHost({ type: 'BUY_PROPERTY', property: { name, rent, color }, tx: {
                     fromId: state.playerId, toId: 'BANK', amount: price, note: 'Compra de Imóvel: ' + name
                 }});
-            } else sendToHost({ type: 'EDIT_PROPERTY', index, name, rent });
+            } else sendToHost({ type: 'EDIT_PROPERTY', propertyId: document.getElementById('prop-edit-id').value, name, rent, color });
             closePropertyModal();
         }
 
@@ -824,8 +884,65 @@
             openPropertyModal(idx);
         }
 
+        function previewPropertyColor() {
+            document.getElementById('prop-color-preview').style.color = propertyColor(document.getElementById('prop-color-input').value);
+        }
+
         function deleteProperty(index) {
-            if (confirm('Deseja excluir esta posse?')) sendToHost({ type: 'DELETE_PROPERTY', index });
+            const prop = state.players[state.playerId]?.properties?.[index];
+            if (!prop) return;
+            if (!Number.isSafeInteger(prop.price) || prop.price <= 0) return alert('Esta posse não tem preço de compra registrado.');
+            document.getElementById('mortgage-prop-idx').value = prop.id;
+            document.getElementById('mortgage-prop-name').innerText = prop.name;
+            document.getElementById('mortgage-prop-name').style.color = propertyColor(prop.color);
+            document.getElementById('mortgage-prop-value').innerText = formatMoney(prop.price / 2);
+            document.getElementById('modal-mortgage-prop').classList.remove('hidden');
+        }
+
+        function closeMortgageModal() {
+            document.getElementById('modal-mortgage-prop').classList.add('hidden');
+        }
+
+        function confirmMortgage() {
+            sendToHost({ type: 'MORTGAGE_PROPERTY', propertyId: document.getElementById('mortgage-prop-idx').value });
+            closeMortgageModal();
+        }
+
+        function openTransferModal(index) {
+            const prop = state.players[state.playerId]?.properties?.[index];
+            if (!prop) return;
+            const buyers = Object.keys(state.players).filter(id => id !== state.playerId);
+            if (!buyers.length) return alert('Não há outro jogador na mesa para receber a posse.');
+            document.getElementById('transfer-prop-idx').value = prop.id;
+            document.getElementById('transfer-prop-name').innerText = prop.name;
+            document.getElementById('transfer-prop-name').style.color = propertyColor(prop.color);
+            document.getElementById('transfer-prop-price').value = '';
+            const select = document.getElementById('transfer-prop-recipient');
+            select.innerHTML = '';
+            buyers.forEach(id => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.innerText = state.players[id].name;
+                select.appendChild(option);
+            });
+            document.getElementById('modal-transfer-prop').classList.remove('hidden');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('modal-transfer-prop').classList.add('hidden');
+        }
+
+        function confirmTransferProp() {
+            const propertyId = document.getElementById('transfer-prop-idx').value;
+            const buyerId = document.getElementById('transfer-prop-recipient').value;
+            const amount = Number(document.getElementById('transfer-prop-price').value);
+            if (!Number.isSafeInteger(amount) || amount <= 0) return alert('Informe um valor negociado válido!');
+            const buyer = state.players[buyerId];
+            if (!buyer || buyerId === state.playerId) return alert('Selecione outro jogador da mesa!');
+            if (buyer.balance < amount) return alert('O comprador não tem saldo suficiente!');
+            if (!(state.players[state.playerId]?.properties || []).some(p => p.id === propertyId)) return alert('Esta posse não está mais disponível.');
+            sendToHost({ type: 'SELL_PROPERTY', propertyId, buyerId, amount });
+            closeTransferModal();
         }
 
         function passGO() {

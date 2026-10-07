@@ -86,6 +86,34 @@ assert.equal(bob.run('state.players.alice.jailed'), false);
 assert.equal(bob.run('state.players.alice.jailRounds'), 0);
 alice.run(`sendToHost({ type: 'TRANSFER', tx: { fromId: 'alice', toId: 'missing', amount: 1000 } });`); flush();
 assert.equal(host.run('state.players.alice.balance'), 10000);
+alice.run(`openPropertyModal(0); document.getElementById('prop-color-input').value = '#ed7272'; saveProperty();`); flush();
+assert.equal(bob.run('state.players.alice.properties[0].color'), '#ed7272');
+alice.run(`openTransferModal(0); document.getElementById('transfer-prop-recipient').value = 'bob';
+    document.getElementById('transfer-prop-price').value = '4500'; confirmTransferProp();`); flush();
+for (const app of [host, alice, bob]) {
+    assert.equal(app.run('state.players.alice.balance'), 14500);
+    assert.equal(app.run('state.players.bob.balance'), 6500);
+    assert.equal(app.run('state.players.alice.properties.length'), 0);
+    assert.equal(app.run('state.players.bob.properties[0].price'), 3000);
+    assert.equal(app.run('state.players.bob.properties[0].color'), '#ed7272');
+}
+// A stale resale command cannot charge for a property no longer owned.
+alice.run(`sendToHost({ type: 'SELL_PROPERTY', propertyId: state.players.bob.properties[0].id, buyerId: 'bob', amount: 1000 });`); flush();
+assert.equal(bob.run('state.players.bob.balance'), 6500);
+// The mortgage uses the original bank purchase price, not the negotiated resale price.
+bob.run(`deleteProperty(0); confirmMortgage(); confirmMortgage();`); flush();
+for (const app of [host, alice, bob]) {
+    assert.equal(app.run('state.players.bob.balance'), 8000);
+    assert.equal(app.run('state.players.bob.properties.length'), 0);
+}
+// Failed sales leave both balances and ownership intact.
+host.run(`sendToHost({ type: 'BUY_PROPERTY', property: { name: 'Praça', rent: 100, color: '#67c587' },
+    tx: { fromId: 'host', toId: 'BANK', amount: 1000 } });`); flush();
+host.run(`sendToHost({ type: 'SELL_PROPERTY', propertyId: state.players.host.properties[0].id, buyerId: 'bob', amount: 9000 });`); flush();
+assert.equal(host.run('state.players.host.properties.length'), 1);
+assert.equal(host.run('state.players.host.balance'), 9000);
+assert.equal(bob.run('state.players.bob.balance'), 8000);
+console.log('OK: cores compartilhadas, venda negociada, hipoteca a 50%, comandos repetidos e saldo insuficiente.');
 alice.run('leaveRoom()'); flush();
 assert.equal(host.run("'alice' in state.players"), false);
 assert.equal(bob.run("'alice' in state.players"), false);
