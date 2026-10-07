@@ -101,6 +101,7 @@ def run(channel):
             assert "R$ 200" in page.locator("#undo-impact").inner_text()
             page.locator("#undo-confirm").click()
             page.wait_for_function("state.players[state.playerId].properties[0].houses === 0 && state.players[state.playerId].balance === 25000")
+            assert not page.evaluate("id => state.transactions.some(t => t.id === id)", build_id)
             select_tab("posses")
             click_canvas("prop_mortgage_0")
             page.wait_for_selector("#modal-mortgage-prop:not(.hidden)")
@@ -134,6 +135,7 @@ def run(channel):
             assert "R$ 4.000" in page.locator("#undo-impact").inner_text()
             page.locator("#undo-confirm").click()
             page.wait_for_function("state.players[state.playerId].balance === 25000")
+            assert not page.evaluate("ids => state.transactions.some(t => ids.includes(t.id))", batch_ids)
             # A larger table checks scrolling, names with accents and bank emoji sanitization.
             page.evaluate("""() => {
                 for (let i = 0; i < 10; i++) state.players['other-' + i] = {
@@ -148,11 +150,37 @@ def run(channel):
                 page.wait_for_function("id => companionLayout.theme === id", arg=bank)
                 page.locator("#modal-bank-settings .btn-blue").click()
                 assert page.evaluate("chosenBankTheme()") == bank
-                for tab in ["conta", "jogadores", "posses", "historico", "prisao"]:
+                for tab in ["conta", "jogadores", "posses", "historico", "prisao", "pix"]:
                     select_tab(tab)
                     assert not layout()["missingGlyphs"], (bank, tab, layout()["missingGlyphs"])
                     page.screenshot(path=str(screenshots / f"{bank}-{tab}.png"))
                 assert page.evaluate("state.players[state.playerId].balance") == 25000
+            select_tab("pix")
+            page.evaluate("""async () => {
+                const payload = pixPayload('other-0');
+                const qr = qrcode(0,'M'); qr.addData(payload); qr.make();
+                const canvas = document.createElement('canvas'), count = qr.getModuleCount(), cell = 8;
+                canvas.width = canvas.height = (count+8)*cell;
+                const context = canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);
+                context.fillStyle='#000';
+                for (let row=0;row<count;row++) for (let col=0;col<count;col++) if(qr.isDark(row,col)) context.fillRect((col+4)*cell,(row+4)*cell,cell,cell);
+                const image=context.getImageData(0,0,canvas.width,canvas.height);
+                if(jsQR(image.data,canvas.width,canvas.height).data!==payload) throw new Error('QR roundtrip failed');
+                const stream=canvas.captureStream(10);window.qrCameraStops=0;
+                for (const track of stream.getTracks()) { const stop=track.stop.bind(track);track.stop=()=>{qrCameraStops++;stop()}; }
+                navigator.mediaDevices.getUserMedia = async () => stream;
+                state.players['other-0'].properties=[{id:'pix-property',name:'Rua Pix',price:1500,rent:400,houses:0,mortgaged:false}];
+            }""")
+            click_canvas("pix_scan")
+            page.wait_for_selector("#modal-tx:not(.hidden)")
+            assert page.evaluate("paymentMethod") == "PIX"
+            assert page.evaluate("qrCameraStops") > 0
+            assert page.locator("#modal-recipient").input_value() == "other-0"
+            page.locator("#modal-property").select_option("pix-property")
+            assert page.locator("#modal-amount").input_value() == "400"
+            page.evaluate("confirmTransfer()")
+            page.wait_for_function("state.transactions.at(-1).paymentMethod === 'PIX' && state.transactions.at(-1).propertyId === 'pix-property'")
+            assert page.evaluate("state.players[state.playerId].balance") == 24600
             page.reload(wait_until="networkidle")
             page.wait_for_function("companionLayout && companionLayout.theme === 'nexus' && companionLayout.screen === 'game'")
             assert page.evaluate("chosenBankTheme()") == "nexus"

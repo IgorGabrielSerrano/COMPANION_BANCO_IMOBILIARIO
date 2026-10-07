@@ -76,6 +76,11 @@ func _draw() -> void:
 			for y in [7,14,21]: line([Vector2(3,y),Vector2(25,y)])
 			for p in [Vector2(10,7),Vector2(19,14),Vector2(8,21)]:
 				draw_circle(p,3,tint)
+		"qr":
+			for p in [Vector2(3,3),Vector2(17,3),Vector2(3,17)]:
+				draw_rect(Rect2(p,Vector2(8,8)),tint,false,1.7)
+				draw_rect(Rect2(p+Vector2(3,3),Vector2(2,2)),tint)
+			line([Vector2(17,17),Vector2(25,17),Vector2(25,25),Vector2(21,25),Vector2(21,21),Vector2(17,21)])
 		_:
 			line([Vector2(14,5),Vector2(14,23)])
 			line([Vector2(5,14),Vector2(23,14)])

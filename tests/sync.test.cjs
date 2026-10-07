@@ -135,7 +135,8 @@ assert.equal(bob.run('state.players.bob.balance'), 6500);
 bob.run(`deleteProperty(0); confirmMortgage(); confirmMortgage();`); flush();
 for (const app of [host, alice, bob]) {
     assert.equal(app.run('state.players.bob.balance'), 8000);
-    assert.equal(app.run('state.players.bob.properties.length'), 0);
+    assert.equal(app.run('state.players.bob.properties.length'), 1);
+    assert.equal(app.run('state.players.bob.properties[0].mortgaged'), true);
 }
 // Failed sales leave both balances and ownership intact.
 host.run(`sendToHost({ type: 'BUY_PROPERTY', property: { name: 'Praça', rent: 100, color: '#67c587' },
@@ -254,14 +255,19 @@ assert.equal(undoHost.run('state.players.buyer.balance'), 3800); // Even a forge
 undoHost.run(`handleIncomingData({type:'UNDO',actorId:'buyer',transactionId:'${constructionId}'});`);
 assert.equal(undoHost.run('state.players.buyer.balance'), 3800);
 undoHost.run(`handleIncomingData({type:'SELL_PROPERTY',actorId:'buyer',propertyId:'${propertyId}',buyerId:'other',amount:900});`);
+assert.equal(undoHost.run('state.players.other.properties.length'), 0);
+undoHost.run(`handleIncomingData({type:'SELL_HOUSES',actorId:'buyer',propertyId:'${propertyId}',count:1,rent:100,revision:1});`);
+const houseSaleId = undoHost.run('state.transactions.at(-1).id');
+assert.equal(undoHost.run('state.players.buyer.balance'), 3900);
+undoHost.run(`handleIncomingData({type:'SELL_PROPERTY',actorId:'buyer',propertyId:'${propertyId}',buyerId:'other',amount:900});`);
 const saleId = undoHost.run('state.transactions.at(-1).id');
-assert.equal(undoHost.run('state.players.other.properties[0].houses'), 1);
-undoHost.run(`undoTransaction('${saleId}'); undoTransaction('${constructionId}'); undoTransaction('${purchaseId}');`);
+assert.equal(undoHost.run('state.players.other.properties[0].houses'), 0);
+undoHost.run(`undoTransaction('${saleId}'); undoTransaction('${houseSaleId}'); undoTransaction('${constructionId}'); undoTransaction('${purchaseId}');`);
 assert.equal(undoHost.run('state.players.buyer.balance'), 5000);
 assert.equal(undoHost.run('state.players.other.balance'), 5000);
 assert.equal(undoHost.run('state.players.buyer.properties.length'), 0);
 assert.equal(undoHost.run('state.players.other.properties.length'), 0);
-assert.equal(undoHost.run('state.transactions.filter(tx=>tx.undone).length'), 3);
+assert.equal(undoHost.run(`state.transactions.some(tx=>${JSON.stringify([saleId, houseSaleId, constructionId, purchaseId])}.includes(tx.id))`), false);
 assert.notEqual(undoHost.run(`undoProblem(state.transactions.find(tx=>tx.id==='${purchaseId}'))`), '');
 undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'other',amount:100}});`);
 const transferId = undoHost.run('state.transactions.at(-1).id');
@@ -276,6 +282,15 @@ assert.equal(undoHost.run('state.players.buyer.properties[0].houses'), 0);
 assert.equal(undoHost.run('state.players.buyer.balance'), 3950);
 undoHost.run(`handleIncomingData({type:'MORTGAGE_PROPERTY',actorId:'buyer',propertyId:'${secondProp}'});`);
 const mortgageId = undoHost.run('state.transactions.at(-1).id');
+assert.equal(undoHost.run('state.players.buyer.properties[0].mortgaged'), true);
+assert.equal(undoHost.run('state.players.buyer.balance'), 4450);
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'other',tx:{fromId:'other',toId:'buyer',amount:100,propertyId:'${secondProp}'}});`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 4450);
+undoHost.run(`handleIncomingData({type:'REDEEM_PROPERTY',actorId:'buyer',propertyId:'${secondProp}'});`);
+const redemptionId = undoHost.run('state.transactions.at(-1).id');
+assert.equal(undoHost.run('state.players.buyer.balance'), 3850);
+assert.equal(undoHost.run('state.players.buyer.properties[0].mortgaged'), false);
+undoHost.run(`undoTransaction('${redemptionId}');`);
 undoHost.run(`undoTransaction('${mortgageId}'); undoTransaction('${secondBuy}');`);
 assert.equal(undoHost.run('state.players.buyer.balance'), 4950);
 assert.equal(undoHost.run('state.players.buyer.properties.length'), 0);
@@ -293,13 +308,23 @@ const batchIds = JSON.parse(undoHost.run('JSON.stringify(state.transactions.slic
 const batchBefore = undoHost.run('state.players.buyer.balance');
 undoHost.run(`openUndoModal(${JSON.stringify(batchIds)}); confirmUndo();`);
 assert.equal(undoHost.run('state.players.buyer.balance'), batchBefore + 500);
-assert.equal(undoHost.run('state.transactions.slice(-2).every(t=>t.undone)'), true);
+assert.equal(undoHost.run(`state.transactions.some(tx=>${JSON.stringify(batchIds)}.includes(tx.id))`), false);
 undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:25}});`);
 const validId = undoHost.run('state.transactions.at(-1).id');
 const stateBeforeBadBatch = undoHost.run('JSON.stringify(state)');
 assert.notEqual(undoHost.run(`prepareUndo(['${validId}', '${batchIds[0]}']).problem`), '');
 assert.equal(undoHost.run('JSON.stringify(state)'), stateBeforeBadBatch);
 console.log('OK: desfazer múltiplas ações contabiliza todas e lote inválido não altera nada.');
+undoHost.run(`state.players.other.properties=[{id:'qr-property',name:'Rua QR',rent:400,price:1500,houses:0,mortgaged:false}];`);
+assert.equal(undoHost.run(`pixRecipient(JSON.stringify({kind:'companion-player',version:1,pin:'8888',playerId:'other'})).id`), 'other');
+assert.ok(undoHost.run(`pixRecipient(JSON.stringify({kind:'companion-player',version:1,pin:'9999',playerId:'other'})).error`));
+assert.ok(undoHost.run(`pixRecipient(pixPayload()).error`));
+assert.ok(undoHost.run(`pixRecipient('https://example.com').error`));
+undoHost.run(`openPixPayment(pixPayload('other')); document.getElementById('modal-amount').value='400';
+    document.getElementById('modal-property').value='qr-property'; onPropertySelected();confirmTransfer();`);
+assert.equal(undoHost.run('state.transactions.at(-1).paymentMethod'), 'PIX');
+assert.equal(undoHost.run('state.transactions.at(-1).propertyId'), 'qr-property');
+console.log('OK: hipoteca mantém posse, aluguel bloqueado, resgate +20%, QR de mesa/jogador e Pix com aluguel.');
 
 (async () => {
     const loading = page();

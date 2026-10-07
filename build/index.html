@@ -7,6 +7,8 @@
     <link rel="icon" href="game/index.icon.png" type="image/png">
     <!-- PeerJS CDN for WebRTC Realtime Multi-Device Sync -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="assets/vendor/qrcode.js"></script>
+    <script src="assets/vendor/jsQR.js"></script>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -306,9 +308,11 @@
                 <div style="background:#1c2a1e; border:1px solid #2ecc71; border-radius:8px; padding:10px;">
                     <div style="font-size:0.8rem; color:var(--subtext);">Você vai receber do Banco:</div>
                     <div id="mortgage-prop-value" style="font-size:1.5rem; font-weight:bold; color:var(--accent-green);">R$ 0</div>
-                    <div style="font-size:0.75rem; color:var(--subtext); margin-top:2px;">(metade do preço de compra)</div>
+                    <div id="mortgage-breakdown" style="font-size:0.75rem; color:var(--bank-muted); margin-top:2px;"></div>
                 </div>
-                <p style="font-size:0.82rem; color:var(--accent-red);">⚠️ A posse será removida e você não poderá mais cobrar aluguel.</p>
+                <label for="mortgage-base">Valor da hipoteca indicado na carta (R$):</label>
+                <input id="mortgage-base" type="number" min="0.01" step="0.01" oninput="updateMortgagePreview()">
+                <p style="font-size:0.82rem;color:var(--bank-muted)">A posse permanece com você, hipotecada e sem aluguel. O resgate custa a base registrada mais 20%.</p>
 
                 <div style="display: flex; gap: 8px; margin-top: 6px;">
                     <button style="flex:1" onclick="closeMortgageModal()">Cancelar</button>
@@ -319,6 +323,7 @@
         <div id="modal-building" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="building-title">
             <div class="modal-content">
                 <h3 id="building-title">Construir casas</h3>
+                <p style="font-size:0.8rem;color:var(--bank-muted)">Confira no tabuleiro: sua vez de jogar, grupo de cor completo e construção equilibrada entre as posses do grupo.</p>
                 <strong id="building-property-name"></strong>
                 <input type="hidden" id="building-property-id">
                 <input type="hidden" id="building-revision">
@@ -341,13 +346,31 @@
                 <h3 id="undo-title">Desfazer transação</h3>
                 <div id="undo-items" style="display:flex;flex-direction:column;gap:8px"></div>
                 <div id="undo-impact" style="font-size:0.85rem;line-height:1.6"></div>
-                <p style="font-size:0.8rem;color:var(--bank-muted)">Confirme para restaurar dinheiro, posse, casas e aluguel das ações selecionadas. Todas serão desfeitas juntas, da mais recente para a mais antiga.</p>
+                <p style="font-size:0.8rem;color:var(--bank-muted)">Confirme para restaurar dinheiro, posse, casas e aluguel das ações selecionadas. Todas serão desfeitas juntas, da mais recente para a mais antiga, e removidas do histórico.</p>
                 <div style="display:flex;gap:8px">
                     <button style="flex:1" onclick="document.getElementById('modal-undo').classList.add('hidden')">Cancelar</button>
                     <button id="undo-confirm" class="btn-blue" style="flex:1" onclick="confirmUndo()">Confirmar desfazer</button>
                 </div>
             </div>
         </div>
+        <div id="modal-redeem" class="modal hidden"><div class="modal-content">
+            <h3>Resgatar hipoteca</h3><input id="redeem-property-id" type="hidden"><p id="redeem-details"></p>
+            <p style="font-size:0.8rem;color:var(--bank-muted)">Faça o resgate na sua vez de jogar.</p>
+            <button class="btn-blue" onclick="confirmRedeem()">Confirmar resgate</button><button onclick="document.getElementById('modal-redeem').classList.add('hidden')">Cancelar</button>
+        </div></div>
+        <div id="modal-sell-houses" class="modal hidden"><div class="modal-content">
+            <h3>Vender casas ao banco</h3><input id="sell-houses-id" type="hidden"><input id="sell-houses-revision" type="hidden"><p id="sell-houses-details"></p>
+            <label>Quantidade de casas a vender:</label><input id="sell-houses-count" type="number" min="1" max="4" step="1" oninput="updateSellHousesPreview()">
+            <label>Aluguel da carta após retirar as casas:</label><input id="sell-houses-rent" type="number" min="1" step="1">
+            <small style="color:var(--bank-muted)">O banco devolve 50% do custo das casas vendidas. Retire primeiro as últimas casas construídas.</small>
+            <button id="sell-houses-confirm" class="btn-blue" onclick="confirmSellHouses()">Confirmar venda de casas</button><button onclick="document.getElementById('modal-sell-houses').classList.add('hidden')">Cancelar</button>
+        </div></div>
+        <div id="modal-pix-scan" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pix-scan-title"><div class="modal-content">
+            <h3 id="pix-scan-title">Escanear QR do jogador</h3>
+            <video id="pix-camera" playsinline muted autoplay style="width:100%;max-height:45dvh;border-radius:12px;background:#000;object-fit:cover"></video>
+            <p id="pix-scan-status" style="color:var(--bank-muted);font-size:0.85rem"></p>
+            <button onclick="closePixScanner()">Fechar câmera</button>
+        </div></div>
         <div id="modal-bank-settings" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bank-settings-title">
             <div class="modal-content">
                 <h3 id="bank-settings-title">Seu banco de brincadeira</h3>
@@ -361,7 +384,7 @@
         </div>
     </div>
 
-    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=71348ae4b6f7" allow="autoplay" loading="eager"></iframe>
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=9d71716e5745" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -469,7 +492,7 @@
         window.companionReady = () => document.body.classList.add('godot-ready');
         window.companionView = () => JSON.stringify({ state, bankAppearance: applyBankTheme(),
             status: document.getElementById('conn-status-text').innerText,
-            sound: soundEnabled, reducedMotion: reducedMotion(), qa: new URLSearchParams(location.search).has('qa') });
+            sound: soundEnabled, reducedMotion: reducedMotion(), pixMatrix: getPixMatrix(), qa: new URLSearchParams(location.search).has('qa') });
         window.companionAction = (action, payload = {}) => {
             unlockMoneyAudio();
             const index = Number(payload.index);
@@ -492,8 +515,11 @@
                 case 'BUILD': openBuildingModal(index); break;
                 case 'UNDO': undoTransaction(payload.id); break;
                 case 'REVIEW_UNDO': openUndoModal(payload.ids); break;
+                case 'PIX_SCAN': startPixScanner(); break;
                 case 'SELL': openTransferModal(index); break;
                 case 'MORTGAGE': deleteProperty(index); break;
+                case 'REDEEM': openRedeemModal(index); break;
+                case 'SELL_HOUSES': openSellHousesModal(index); break;
                 case 'JAIL': jailAction(payload.action); break;
                 case 'LEAVE': leaveRoom(); break;
                 case 'END': endGame(); break;
@@ -752,6 +778,7 @@
 
         function enterGame(isRestored = false) {
             if (state.isBanker) {
+                migratePropertyInvestments();
                 migrateLegacyPayments();
                 for (const player of Object.values(state.players)) {
                     for (const prop of player.properties || []) {
@@ -877,7 +904,7 @@
             if (data.type === 'UNDO' && (fromRemote || data.actorId !== state.playerId)) return;
             if (data.commandId) handledCommands.add(data.commandId);
             const actor = state.players[data.actorId];
-            const reversible = ['TRANSFER', 'BUY_PROPERTY', 'EDIT_PROPERTY', 'BUILD_HOUSES', 'MORTGAGE_PROPERTY', 'SELL_PROPERTY'].includes(data.type);
+            const reversible = ['TRANSFER', 'BUY_PROPERTY', 'EDIT_PROPERTY', 'BUILD_HOUSES', 'SELL_HOUSES', 'MORTGAGE_PROPERTY', 'REDEEM_PROPERTY', 'SELL_PROPERTY'].includes(data.type);
             const before = reversible ? structuredClone(state.players) : null;
             const historyLength = state.transactions.length;
             if (data.type === 'JOIN') {
@@ -920,12 +947,16 @@
                 if (tx.fromId !== data.actorId && !(tx.fromId === 'BANK' && tx.toId === data.actorId)) return;
                 const from = state.players[tx.fromId], to = state.players[tx.toId];
                 if ((tx.fromId !== 'BANK' && !from) || (tx.toId !== 'BANK' && !to)) return;
+                if (tx.propertyId) {
+                    const rental = to?.properties?.find(p => p.id === tx.propertyId);
+                    if (!rental || rental.mortgaged) return;
+                }
                 if (from && from.balance < tx.amount) return;
                 if (data.type === 'BUY_PROPERTY') {
                     if (tx.fromId !== data.actorId || tx.toId !== 'BANK' ||
                         !data.property || !data.property.name || !Number.isSafeInteger(data.property.rent) || data.property.rent <= 0) return;
                     (actor.properties ||= []).push({ id: crypto.randomUUID(), name: data.property.name,
-                        price: tx.amount, rent: data.property.rent, houses: 0, color: propertyColor(data.property.color) });
+                        price: tx.amount, rent: data.property.rent, houses: 0, houseCosts: [], houseInvestment: 0, mortgaged: false, color: propertyColor(data.property.color) });
                 }
                 if (from) from.balance -= tx.amount;
                 if (to) to.balance += tx.amount;
@@ -940,29 +971,60 @@
                 const prop = (actor.properties || []).find(p => p.id === data.propertyId);
                 if (!prop || !Number.isSafeInteger(data.houses) || data.houses < 0 || data.houses > 4 ||
                     !Number.isSafeInteger(data.rent) || data.rent <= 0 || !Number.isSafeInteger(data.unitCost) || data.unitCost < 0) return;
+                if (prop.mortgaged) return;
                 const added = data.houses - (prop.houses || 0);
                 const cost = added * data.unitCost;
                 if (data.revision !== (prop.buildRevision || 0) || added < 0 || (added > 0 && data.unitCost <= 0) || !Number.isSafeInteger(cost) || actor.balance < cost) return;
+                ensureHouseCosts(prop);
                 prop.houses = data.houses;
                 prop.rent = data.rent;
                 prop.buildRevision = (prop.buildRevision || 0) + 1;
+                prop.houseInvestment = (prop.houseInvestment || 0) + cost;
+                for (let i = 0; i < added; i++) prop.houseCosts.push(data.unitCost);
                 if (cost > 0) {
                     actor.balance -= cost;
                     state.transactions.push({ fromId: data.actorId, toId: 'BANK', from: actor.name, to: '🏦 Banco',
                         amount: cost, note: 'Construção em ' + prop.name + ' · ' + data.houses + ' casa(s)' });
+                }
+            } else if (data.type === 'SELL_HOUSES' || data.type === 'REDEEM_PROPERTY') {
+                const prop = actor.properties?.find(p => p.id === data.propertyId);
+                if (!prop) return;
+                if (data.type === 'SELL_HOUSES') {
+                    if (!Number.isSafeInteger(data.count) || data.count <= 0 || data.count > (prop.houses || 0) || data.revision !== (prop.buildRevision || 0) || !Number.isSafeInteger(data.rent) || data.rent <= 0) return;
+                    ensureHouseCosts(prop);
+                    const originalCost = prop.houseCosts.splice(-data.count).reduce((sum, price) => sum + price, 0);
+                    const amount = Math.round(originalCost * 50) / 100;
+                    actor.balance += amount;
+                    prop.houses -= data.count;
+                    prop.houseInvestment = prop.houseCosts.reduce((sum, price) => sum + price, 0);
+                    prop.rent = data.rent;
+                    prop.buildRevision = (prop.buildRevision || 0) + 1;
+                    state.transactions.push({ fromId:'BANK', toId:data.actorId, from:'🏦 Banco', to:actor.name,
+                        amount, note:'Venda de casas ao banco: ' + prop.name });
+                } else {
+                    if (!prop.mortgaged) return;
+                    const amount = redemptionValue(prop);
+                    if (actor.balance < amount) return;
+                    actor.balance -= amount;
+                    prop.mortgaged = false;
+                    state.transactions.push({ fromId:data.actorId, toId:'BANK', from:actor.name, to:'🏦 Banco', amount,
+                        note:'Resgate de hipoteca (+20%): ' + prop.name });
                 }
             } else if (data.type === 'MORTGAGE_PROPERTY' || data.type === 'SELL_PROPERTY') {
                 const index = (actor.properties || []).findIndex(p => p.id === data.propertyId);
                 if (index < 0) return;
                 const prop = actor.properties[index];
                 if (data.type === 'MORTGAGE_PROPERTY') {
-                    if (!Number.isSafeInteger(prop.price) || prop.price <= 0) return;
-                    const amount = prop.price / 2;
+                    const amount = data.mortgageAmount ?? propertyMortgage(prop);
+                    if ((prop.houses || 0) > 0 || prop.mortgaged || !Number.isFinite(amount) || amount <= 0) return;
                     actor.balance += amount;
-                    actor.properties.splice(index, 1);
+                    prop.mortgaged = true;
+                    prop.mortgageAmount = amount;
+                    prop.mortgagePrincipal = amount;
                     state.transactions.push({ fromId: 'BANK', toId: data.actorId, from: '🏦 Banco',
                         to: actor.name, amount, note: 'Hipoteca: ' + prop.name });
                 } else {
+                    if ((prop.houses || 0) > 0) return;
                     const buyer = state.players[data.buyerId];
                     if (!buyer || data.buyerId === data.actorId || !Number.isSafeInteger(data.amount) || data.amount <= 0 || buyer.balance < data.amount) return;
                     buyer.balance -= data.amount;
@@ -1010,6 +1072,40 @@
             return result;
         }
 
+        function propertyBankValue(prop) {
+            return prop.price + (prop.houseInvestment || 0);
+        }
+
+        function propertyMortgage(prop) {
+            return prop.mortgageAmount || prop.price / 2;
+        }
+
+        function redemptionValue(prop) {
+            return Math.round((prop.mortgagePrincipal || propertyMortgage(prop)) * 120) / 100;
+        }
+
+        function ensureHouseCosts(prop, count = prop.houses || 0) {
+            if (!Array.isArray(prop.houseCosts) || prop.houseCosts.length !== count) {
+                prop.houseCosts = Array(count).fill(count ? (prop.houseInvestment || 0) / count : 0);
+            }
+        }
+
+        function migratePropertyInvestments() {
+            const investments = {};
+            for (const tx of state.transactions) {
+                for (const [id, change] of Object.entries(tx.undo?.properties || {})) {
+                    const previous = investments[id] || 0;
+                    if (change.before && change.before.property.houseInvestment === undefined) change.before.property.houseInvestment = previous;
+                    const addedCost = tx.actionType === 'BUILD_HOUSES' ? tx.amount : 0;
+                    if (change.after && change.after.property.houseInvestment === undefined) change.after.property.houseInvestment = previous + addedCost;
+                    if (!tx.undone) investments[id] = change.after?.property.houseInvestment ?? previous;
+                }
+            }
+            for (const player of Object.values({ ...state.departedPlayers, ...state.players })) {
+                for (const prop of player.properties || []) prop.houseInvestment ??= investments[prop.id] || 0;
+            }
+        }
+
         function migrateLegacyPayments() {
             for (const tx of state.transactions) {
                 tx.id ||= crypto.randomUUID();
@@ -1026,7 +1122,8 @@
 
         function propertyFingerprint(value) {
             if (!value) return '';
-            const prop = { ...value.property, houses: value.property.houses || 0 };
+            const prop = { ...value.property, houses: value.property.houses || 0, houseInvestment: value.property.houseInvestment || 0, mortgaged: !!value.property.mortgaged };
+            prop.houseCosts ||= Array(prop.houses).fill(prop.houses ? prop.houseInvestment / prop.houses : 0);
             delete prop.buildRevision;
             return JSON.stringify([value.owner, Object.entries(prop).sort(([a], [b]) => a.localeCompare(b))]);
         }
@@ -1102,6 +1199,7 @@
                 if (problem) return { problem };
                 applyUndo(tx, next);
             }
+            next.transactions = next.transactions.filter(tx => !unique.has(tx.id));
             return { next, problem: '' };
         }
 
@@ -1154,6 +1252,7 @@
         }
 
         function resetRoom() {
+            stopPixCamera();
             clearSession();
             const oldPeer = peer;
             if (oldPeer) setTimeout(() => oldPeer.destroy(), 300);
@@ -1394,12 +1493,69 @@
         function deleteProperty(index) {
             const prop = state.players[state.playerId]?.properties?.[index];
             if (!prop) return;
+            if ((prop.houses || 0) > 0) return alert('Venda as casas ao banco antes de hipotecar.');
+            if (prop.mortgaged) return openRedeemModal(index);
             if (!Number.isSafeInteger(prop.price) || prop.price <= 0) return alert('Esta posse não tem preço de compra registrado.');
             document.getElementById('mortgage-prop-idx').value = prop.id;
             document.getElementById('mortgage-prop-name').innerText = prop.name;
             document.getElementById('mortgage-prop-name').style.color = propertyColor(prop.color);
-            document.getElementById('mortgage-prop-value').innerText = formatMoney(prop.price / 2);
+            document.getElementById('mortgage-prop-value').innerText = formatMoney(propertyMortgage(prop));
+            document.getElementById('mortgage-base').value = propertyMortgage(prop);
+            updateMortgagePreview();
             document.getElementById('modal-mortgage-prop').classList.remove('hidden');
+        }
+
+        function updateMortgagePreview() {
+            const amount = Number(document.getElementById('mortgage-base').value) || 0;
+            document.getElementById('mortgage-prop-value').innerText = formatMoney(amount);
+            document.getElementById('mortgage-breakdown').innerText = 'Receber agora: ' + formatMoney(amount) + ' · Resgatar depois (+20%): ' + formatMoney(Math.round(amount * 120) / 100);
+        }
+
+        function openRedeemModal(index) {
+            const prop = state.players[state.playerId]?.properties?.[index];
+            if (!prop?.mortgaged) return;
+            document.getElementById('redeem-property-id').value = prop.id;
+            document.getElementById('redeem-details').innerText = prop.name + ' · Base: ' + formatMoney(prop.mortgagePrincipal || propertyMortgage(prop)) + ' · Resgate (+20%): ' + formatMoney(redemptionValue(prop));
+            document.getElementById('modal-redeem').classList.remove('hidden');
+        }
+
+        function confirmRedeem() {
+            const propertyId = document.getElementById('redeem-property-id').value;
+            const prop = state.players[state.playerId]?.properties?.find(p=>p.id===propertyId);
+            if (!prop?.mortgaged) return;
+            if (state.players[state.playerId].balance < redemptionValue(prop)) return alert('Saldo insuficiente para resgatar.');
+            sendToHost({type:'REDEEM_PROPERTY',propertyId});
+            document.getElementById('modal-redeem').classList.add('hidden');
+        }
+
+        function openSellHousesModal(index) {
+            const prop = state.players[state.playerId]?.properties?.[index];
+            if (!prop || !(prop.houses > 0)) return alert('Esta posse não tem casas.');
+            document.getElementById('sell-houses-id').value=prop.id;
+            document.getElementById('sell-houses-revision').value=prop.buildRevision || 0;
+            document.getElementById('sell-houses-count').value=prop.houses;
+            document.getElementById('sell-houses-count').max=prop.houses;
+            document.getElementById('sell-houses-rent').value=prop.rent;
+            updateSellHousesPreview();
+            document.getElementById('modal-sell-houses').classList.remove('hidden');
+        }
+
+        function updateSellHousesPreview() {
+            const prop=state.players[state.playerId]?.properties?.find(p=>p.id===document.getElementById('sell-houses-id').value);
+            if (!prop) return;
+            const costs=Array.isArray(prop.houseCosts) && prop.houseCosts.length===prop.houses ? prop.houseCosts : Array(prop.houses).fill((prop.houseInvestment || 0)/prop.houses);
+            const count=Number(document.getElementById('sell-houses-count').value);
+            const refund=costs.slice(-count).reduce((sum,price)=>sum+price,0)/2;
+            document.getElementById('sell-houses-details').innerText=prop.name+' · Receber do banco: '+formatMoney(refund);
+        }
+
+        function confirmSellHouses() {
+            const propertyId=document.getElementById('sell-houses-id').value;
+            const count=Number(document.getElementById('sell-houses-count').value), rent=Number(document.getElementById('sell-houses-rent').value);
+            const prop=state.players[state.playerId]?.properties?.find(p=>p.id===propertyId);
+            if (!prop || !Number.isSafeInteger(count) || count<=0 || count>prop.houses || !Number.isSafeInteger(rent) || rent<=0) return alert('Informe a quantidade e o aluguel após a venda.');
+            sendToHost({type:'SELL_HOUSES',propertyId,count,rent,revision:Number(document.getElementById('sell-houses-revision').value)});
+            document.getElementById('modal-sell-houses').classList.add('hidden');
         }
 
         function closeMortgageModal() {
@@ -1407,13 +1563,16 @@
         }
 
         function confirmMortgage() {
-            sendToHost({ type: 'MORTGAGE_PROPERTY', propertyId: document.getElementById('mortgage-prop-idx').value });
+            const mortgageAmount = Number(document.getElementById('mortgage-base').value);
+            if (!Number.isFinite(mortgageAmount) || mortgageAmount <= 0) return alert('Informe o valor de hipoteca da carta.');
+            sendToHost({ type: 'MORTGAGE_PROPERTY', propertyId: document.getElementById('mortgage-prop-idx').value, mortgageAmount });
             closeMortgageModal();
         }
 
         function openTransferModal(index) {
             const prop = state.players[state.playerId]?.properties?.[index];
             if (!prop) return;
+            if ((prop.houses || 0) > 0) return alert('Venda as casas ao banco antes de transferir a posse.');
             const buyers = Object.keys(state.players).filter(id => id !== state.playerId);
             if (!buyers.length) return alert('Não há outro jogador na mesa para receber a posse.');
             document.getElementById('transfer-prop-idx').value = prop.id;
@@ -1455,7 +1614,107 @@
         }
 
         let currentModalMode = '';
+        let paymentMethod = '';
+        let pixRecipientId = '';
+        let qrCacheKey = '', qrCacheMatrix = [];
+        let pixStream = null, pixScanFrame = null, pixScanGeneration = 0;
+
+        function pixPayload(playerId = state.playerId) {
+            return JSON.stringify({ kind:'companion-player', version:1, pin:state.pin, playerId });
+        }
+
+        function getPixMatrix() {
+            if (!state.pin || !state.players[state.playerId] || typeof qrcode !== 'function') return [];
+            const key = pixPayload();
+            if (key !== qrCacheKey) {
+                const qr = qrcode(0,'M'); qr.addData(key); qr.make();
+                qrCacheMatrix = Array.from({length:qr.getModuleCount()},(_,row)=>Array.from({length:qr.getModuleCount()},(_,col)=>qr.isDark(row,col)?1:0));
+                qrCacheKey = key;
+            }
+            return qrCacheMatrix;
+        }
+
+        function pixRecipient(raw) {
+            let payload;
+            try { payload=JSON.parse(raw); } catch (_) { return {error:'Este QR não é de um jogador da mesa.'}; }
+            if (!payload || payload.kind!=='companion-player' || payload.version!==1 || typeof payload.playerId!=='string') return {error:'QR inválido para este jogo.'};
+            if (payload.pin!==state.pin) return {error:'Este QR pertence a outra mesa.'};
+            if (payload.playerId===state.playerId) return {error:'Escaneie o QR de outro jogador.'};
+            if (!state.players[payload.playerId]) return {error:'Esse jogador não está na mesa.'};
+            return {id:payload.playerId};
+        }
+
+        function openPixPayment(raw) {
+            const result=pixRecipient(raw);
+            if (result.error) return result.error;
+            stopPixCamera();
+            document.getElementById('modal-pix-scan').classList.add('hidden');
+            openModal('PAY_PLAYER');
+            paymentMethod='PIX'; pixRecipientId=result.id;
+            document.getElementById('modal-title').innerText='Pagar com Pix da mesa';
+            const recipient=document.getElementById('modal-recipient');recipient.value=result.id;recipient.disabled=true;
+            onRecipientChanged();
+            return '';
+        }
+
+        function stopPixCamera() {
+            pixScanGeneration++;
+            if (pixScanFrame!==null) cancelAnimationFrame(pixScanFrame);
+            pixScanFrame=null;
+            if (pixStream) pixStream.getTracks().forEach(track=>track.stop());
+            pixStream=null;
+            const video=document.getElementById('pix-camera');
+            if (video) video.srcObject=null;
+        }
+
+        function closePixScanner() {
+            stopPixCamera();
+            document.getElementById('modal-pix-scan').classList.add('hidden');
+        }
+
+        async function startPixScanner() {
+            if (!state.players[state.playerId]) return;
+            stopPixCamera();
+            const generation=pixScanGeneration;
+            const status=document.getElementById('pix-scan-status');
+            status.innerText='Permita a câmera e aponte para o QR do outro jogador.';
+            document.getElementById('modal-pix-scan').classList.remove('hidden');
+            if (!navigator.mediaDevices?.getUserMedia) { status.innerText='A câmera não está disponível neste navegador. Use Pagar jogador na Conta.'; return; }
+            try {
+                const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false});
+                if (generation!==pixScanGeneration || !state.pin) {stream.getTracks().forEach(track=>track.stop());return;}
+                pixStream=stream;
+                const video=document.getElementById('pix-camera');video.srcObject=stream;await video.play();
+                const canvas=document.createElement('canvas'), context=canvas.getContext('2d',{willReadFrequently:true});
+                let lastRead=0;
+                const read=now=>{
+                    if (generation!==pixScanGeneration) return;
+                    if (video.readyState>=2 && video.videoWidth && now-lastRead>150) {
+                        lastRead=now;const scale=Math.min(1,640/video.videoWidth);
+                        canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);
+                        context.drawImage(video,0,0,canvas.width,canvas.height);
+                        const pixels=context.getImageData(0,0,canvas.width,canvas.height);
+                        const code=jsQR(pixels.data,canvas.width,canvas.height,{inversionAttempts:'dontInvert'});
+                        if (code) {
+                            const error=openPixPayment(code.data);
+                            if (!error) return;
+                            status.innerText=error;
+                        }
+                    }
+                    pixScanFrame=requestAnimationFrame(read);
+                };
+                pixScanFrame=requestAnimationFrame(read);
+            } catch (_) {
+                if (generation===pixScanGeneration) {stopPixCamera();status.innerText='Não foi possível abrir a câmera. Permita o acesso no navegador ou use Pagar jogador na Conta.';}
+            }
+        }
+
+        window.addEventListener('pagehide',stopPixCamera);
+        window.addEventListener('visibilitychange',()=>{if(document.hidden) closePixScanner();});
         function openModal(mode) {
+            paymentMethod = '';
+            pixRecipientId = '';
+            document.getElementById('modal-recipient').disabled = false;
             currentModalMode = mode;
             document.getElementById('modal-tx').classList.remove('hidden');
             
@@ -1489,7 +1748,7 @@
 
         function refreshRecipientDropdown() {
             const selectRec = document.getElementById('modal-recipient');
-            const selectedVal = selectRec.value;
+            const selectedVal = pixRecipientId || selectRec.value;
             selectRec.innerHTML = '';
             
             // Filter ALL connected players except oneself
@@ -1509,6 +1768,10 @@
             }
 
             onRecipientChanged();
+            if (pixRecipientId) {
+                selectRec.disabled = true;
+                if (!state.players[pixRecipientId]) selectRec.value = '';
+            }
         }
 
         function onRecipientChanged() {
@@ -1516,11 +1779,12 @@
             const targetId = selectRec.value;
             const selectProp = document.getElementById('modal-property');
             const lblProp = document.getElementById('lbl-property');
+            const previousProperty = selectProp.value;
             
             selectProp.innerHTML = '';
 
             if (targetId && state.players[targetId]) {
-                const targetProps = state.players[targetId].properties || [];
+                const targetProps = (state.players[targetId].properties || []).filter(p => !p.mortgaged);
                 lblProp.classList.remove('hidden');
                 selectProp.classList.remove('hidden');
 
@@ -1531,10 +1795,11 @@
 
                 targetProps.forEach((p, idx) => {
                     const opt = document.createElement('option');
-                    opt.value = idx;
+                    opt.value = p.id;
                     opt.innerText = `🏠 ${p.name} - Aluguel: ${formatMoney(p.rent)}`;
                     selectProp.appendChild(opt);
                 });
+                if (targetProps.some(p=>p.id===previousProperty)) selectProp.value=previousProperty;
             } else {
                 lblProp.classList.add('hidden');
                 selectProp.classList.add('hidden');
@@ -1548,7 +1813,7 @@
             const propIdx = selectProp.value;
 
             if (targetId && state.players[targetId] && propIdx !== '') {
-                const p = state.players[targetId].properties[propIdx];
+                const p = state.players[targetId].properties.find(p => p.id === propIdx);
                 if (p) {
                     document.getElementById('modal-amount').value = p.rent;
                     document.getElementById('modal-note').value = 'Aluguel: ' + p.name;
@@ -1575,12 +1840,16 @@
             if (currentModalMode === 'PAY_PLAYER') {
                 toId = document.getElementById('modal-recipient').value;
                 if (!state.players[toId] || toId === state.playerId) return alert('Selecione um jogador válido!');
+                if (paymentMethod === 'PIX' && toId !== pixRecipientId) return alert('O jogador do QR não está mais disponível. Escaneie novamente.');
             } else if (currentModalMode === 'RECEIVE_BANK') {
                 fromId = 'BANK';
                 toId = state.playerId;
             }
             if (fromId !== 'BANK' && me.balance < amount) return alert('Saldo insuficiente!');
-            sendToHost({ type: 'TRANSFER', tx: { fromId, toId, amount, note } });
+            const propertyId = currentModalMode === 'PAY_PLAYER' ? document.getElementById('modal-property').value : '';
+            if (propertyId && !state.players[toId]?.properties?.some(p => p.id === propertyId && !p.mortgaged)) return alert('A posse selecionada não está mais com esse jogador.');
+            sendToHost({ type: 'TRANSFER', tx: { fromId, toId, amount, propertyId, paymentMethod,
+                note: paymentMethod === 'PIX' ? 'Pago com Pix' + (note ? ' · ' + note : '') : note } });
             closeModal();
         }
 

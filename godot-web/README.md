@@ -28,7 +28,7 @@ MuBank, Intel Bank, NeoBank and Nexus Bank are fictional parody names. Preferenc
 modify or broadcast the room's financial state. The parent page supplies one
 palette to both Godot and the HTML form overlays.
 
-Only the compact header and five-tab navigation stay fixed. The Account page,
+Only the compact header and six-tab navigation stay fixed. The Account page,
 including balance, payments, the player overview and recent activity, scrolls
 as a whole. Players, Properties, History and Prison have dedicated views.
 The History tab displays every transaction, while Account previews the latest
@@ -76,14 +76,24 @@ banker taps a transaction to review an undo, or uses Select for a batch. The
 confirmation previews each player's net balance change. Batches are simulated
 newest-first on a clone and applied only when every selected action is valid.
 Property dependencies and insufficient reversal balances require undoing the
-later related action first. Undone entries remain marked in history. Legacy
+later related action first. Successfully undone entries are removed from history
+in the same atomic update that restores balances and properties. Legacy
 property entries without inverse data remain visible but cannot be fully
 reverted. Legacy monetary transfers with valid payer/recipient identifiers
 are migrated to balance-only inverse patches when the banker restores a room.
 
 Browser QA uses Playwright iPhone 11–17 viewport profiles, including heights
-with browser controls visible, with all four skins. This is viewport and touch
+with browser controls visible, with all five skins. This is viewport and touch
 emulation in Chromium, not certification on physical iPhones or mobile Safari.
 Run `python tests/web_smoke.py` with Playwright and Edge installed. QA-only
 canvas bounds and glyph diagnostics are enabled by `?qa=1`; the browser test
 uses them to click the actual Godot controls across viewport sizes.
+
+## Pix parody tab
+
+Each player has a room-specific QR code. Scanning another active player's code
+opens the existing payment form with the recipient locked. Their unmortgaged
+properties can be selected to prefill rent; Pix payments retain property IDs
+and payment method in history. Camera tracks stop on close, successful scan,
+leaving the room or hiding the page. This is an in-game transfer, not a banking
+Pix integration. QR generation and decoding libraries are vendored with licenses.

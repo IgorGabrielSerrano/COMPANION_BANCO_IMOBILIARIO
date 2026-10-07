@@ -125,7 +125,7 @@ offset_bottom=-12
 layout_mode=0
 anchor_left=0.0
 anchor_top=0
-anchor_right=0.2
+anchor_right=0.16666666666666666
 anchor_bottom=0
 offset_left=0
 offset_top=0
@@ -160,9 +160,9 @@ metadata/tone="gold"
 
 [node name="Jogadores" type="Button" parent="Abas"]
 layout_mode=0
-anchor_left=0.2
+anchor_left=0.16666666666666666
 anchor_top=0
-anchor_right=0.4
+anchor_right=0.3333333333333333
 anchor_bottom=0
 offset_left=2
 offset_top=0
@@ -197,9 +197,9 @@ metadata/tone="accent"
 
 [node name="Posses" type="Button" parent="Abas"]
 layout_mode=0
-anchor_left=0.4
+anchor_left=0.3333333333333333
 anchor_top=0
-anchor_right=0.6000000000000001
+anchor_right=0.5
 anchor_bottom=0
 offset_left=2
 offset_top=0
@@ -234,9 +234,9 @@ metadata/tone="accent"
 
 [node name="Historico" type="Button" parent="Abas"]
 layout_mode=0
-anchor_left=0.6000000000000001
+anchor_left=0.5
 anchor_top=0
-anchor_right=0.8
+anchor_right=0.6666666666666666
 anchor_bottom=0
 offset_left=2
 offset_top=0
@@ -271,8 +271,8 @@ metadata/tone="accent"
 
 [node name="Prisao" type="Button" parent="Abas"]
 layout_mode=0
-anchor_left=0.8
-anchor_right=1.0
+anchor_left=0.6666666666666666
+anchor_right=0.8333333333333334
 offset_left=2
 offset_right=0
 offset_bottom=52
@@ -295,5 +295,34 @@ offset_bottom=23
 mouse_filter=2
 script=ExtResource("2")
 kind="lock"
+tint=Color(0.867,0.875,0.89,1)
+metadata/tone="accent"
+
+[node name="Pix" type="Button" parent="Abas"]
+layout_mode=0
+anchor_left=0.8333333
+anchor_right=1.0
+offset_left=2
+offset_right=0
+offset_bottom=52
+text="Pix"
+theme_override_font_sizes/font_size=10
+theme_override_styles/normal=ExtResource("3")
+theme_override_styles/hover=ExtResource("3")
+theme_override_styles/pressed=ExtResource("3")
+theme_override_styles/focus=ExtResource("3")
+metadata/qa_key="tab_pix"
+metadata/tone="normal"
+[node name="Icone" type="Control" parent="Abas/Pix"]
+layout_mode=0
+anchor_left=0.5
+anchor_right=0.5
+offset_left=-10
+offset_top=3
+offset_right=10
+offset_bottom=23
+mouse_filter=2
+script=ExtResource("2")
+kind="qr"
 tint=Color(0.867,0.875,0.89,1)
 metadata/tone="accent"

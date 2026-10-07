@@ -5,6 +5,7 @@ const Atmosphere = preload("res://ui/atmosphere.gd")
 const ShellLayout = preload("res://layouts/estrutura.tscn")
 const AccountLayout = preload("res://layouts/conta.tscn")
 const PrisonLayout = preload("res://layouts/prisao.tscn")
+const PixQR = preload("res://ui/pix_qr.gd")
 const CardGradient = preload("res://ui/card_gradient.gdshader")
 const FONTS = {
 	"Inter": preload("res://fonts/Inter.ttf"), "NunitoSans": preload("res://fonts/NunitoSans.ttf"),
@@ -253,7 +254,7 @@ func _build_screen() -> void:
 		_build_lobby()
 		return
 	tab_buttons.clear()
-	for entry in [["Conta","conta"],["Jogadores","jogadores"],["Posses","posses"],["Historico","historico"],["Prisao","prisao"]]:
+	for entry in [["Conta","conta"],["Jogadores","jogadores"],["Posses","posses"],["Historico","historico"],["Prisao","prisao"],["Pix","pix"]]:
 		var key: String = entry[1]
 		var tab: Button = content.get_node("Abas/"+entry[0])
 		tab.pressed.connect(func():
@@ -374,6 +375,7 @@ func _render_body() -> void:
 		"historico": _render_history()
 		"jogadores": _render_players()
 		"prisao": _render_prison()
+		"pix": _render_pix()
 		_: _render_account()
 
 func _render_account() -> void:
@@ -511,7 +513,7 @@ func _render_players() -> void:
 		card.add_child(row)
 		card.add_child(_label(("Banqueiro · " if player.get("isBanker",false) else "")+("Preso %d/3" % int(player.get("jailRounds",0)) if player.get("jailed",false) else "Livre · duplas %d/3" % int(player.get("consecutiveDoubles",0))),11,"muted"))
 		for prop in player.get("properties",[]):
-			var property := _label(_display(prop.name)+" · %d casa(s) · aluguel " % int(prop.get("houses",0))+_money(float(prop.rent)),12)
+			var property := _label(_display(prop.name)+(" · hipotecada / sem aluguel" if prop.get("mortgaged",false) else " · %d casa(s) · aluguel " % int(prop.get("houses",0))+_money(float(prop.rent))),12)
 			property.add_theme_color_override("font_color",_property_color(prop.get("color","#f1c40f")))
 			card.add_child(property)
 
@@ -541,15 +543,28 @@ func _render_properties() -> void:
 		title.add_theme_color_override("font_color",_property_color(prop.get("color","#f1c40f")))
 		card.add_child(title)
 		card.add_child(_label("%d casa(s) · Aluguel " % int(prop.get("houses",0))+_money(float(prop.rent))+" · Compra "+_money(float(prop.get("price",0))),12,"muted"))
+		card.add_child(_label("Casas pagas "+_money(float(prop.get("houseInvestment",0)))+(" · HIPOTECADA / sem aluguel" if prop.get("mortgaged",false) else ""),12,"muted"))
 		var actions := GridContainer.new()
 		actions.columns = 2
 		actions.add_theme_constant_override("h_separation",8)
 		actions.add_theme_constant_override("v_separation",8)
-		actions.add_child(_button("Construir","home",func(): _command("BUILD",{"index":index}),"soft","prop_build_"+str(index)))
+		if not prop.get("mortgaged",false): actions.add_child(_button("Construir","home",func(): _command("BUILD",{"index":index}),"soft","prop_build_"+str(index)))
+		if int(prop.get("houses",0))>0: actions.add_child(_button("Vender casas","home",func(): _command("SELL_HOUSES",{"index":index}),"normal","prop_sell_houses_"+str(index)))
 		actions.add_child(_button("Editar","edit",func(): _command("EDIT",{"index":index}),"normal","prop_edit_"+str(index)))
 		actions.add_child(_button("Vender","transfer",func(): _command("SELL",{"index":index}),"normal","prop_sell_"+str(index)))
-		actions.add_child(_button("Hipotecar","bank",func(): _command("MORTGAGE",{"index":index}),"normal","prop_mortgage_"+str(index)))
+		actions.add_child(_button("Resgatar" if prop.get("mortgaged",false) else "Hipotecar","bank",func(): _command("REDEEM" if prop.get("mortgaged",false) else "MORTGAGE",{"index":index}),"normal","prop_mortgage_"+str(index)))
 		card.add_child(actions)
+
+func _render_pix() -> void:
+	body.add_child(_label("Pix da mesa",23,"text",true))
+	body.add_child(_label("Escaneie o QR de outro jogador para pagar ou escolher uma posse para aluguel.",13,"muted"))
+	body.add_child(_button("Escanear QR Code","qr",func(): _command("PIX_SCAN"),"soft","pix_scan"))
+	var card := _card(body)
+	card.add_child(_label("Meu QR · "+_display(snapshot.get("playerName","")),16,"text",true))
+	var qr := PixQR.new()
+	qr.matrix = view.get("pixMatrix",[])
+	card.add_child(qr)
+	card.add_child(_label("Mesa "+str(snapshot.get("pin",""))+" · mostre este código para receber",12,"muted"))
 
 func _render_history() -> void:
 	body.add_child(_label("Histórico da mesa",23,"text",true))
