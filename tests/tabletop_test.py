@@ -52,7 +52,7 @@ end
 function fake(guid,x,z)
  local o={resting=true,value=1,moves=0,rolls=0,p={x=x,z=z},buttons={}}
  o.getPosition=function() return o.p end
- o.setPosition=function(p) o.p={x=p[1],z=p[3]} end
+ o.setPosition=function(p) o.p={x=p.x or p[1],z=p.z or p[3]} end
  o.setPositionSmooth=function(p) o.setPosition(p) o.moves=o.moves+1 end
  o.randomize=function() o.rolls=o.rolls+1 end
  o.getValue=function() return o.value end
@@ -62,12 +62,18 @@ function fake(guid,x,z)
  o.getGUID=function() return guid end
  o.getGMNotes=function() return o.notes or '' end
  o.shuffle=function() o.shuffled=true end
+ o.setRotation=function(p) o.rotation=p end
+ o.setDescription=function(s) o.description=s end
+ o.getObjects=function() return o.cards or {} end
  objects[guid]=o return o
 end
 ''')
 for o in save['ObjectStates']:
     fake=lua.globals().fake(o['GUID'],o['Transform']['posX'],o['Transform']['posZ'])
     fake['notes']=o.get('GMNotes','')
+    if o['Name']=='DeckCustom':
+        fake['tag']='Deck'
+        fake['cards']=lua.table_from([lua.table_from({'guid':c['GUID']}) for c in o['ContainedObjects']])
 def from_lua(v):
     if hasattr(v,'items'): return {k:from_lua(val) for k,val in v.items()}
     return v
@@ -150,7 +156,9 @@ assert(string.find(lastXml,'Receba R$',1,true))
 local saved=onSave()
 onLoad(saved)
 assert(canReceiveTitle({color='Blue'}))
+showSetup()
 assert(string.find(lastXml,'Ana &amp; Igor',1,true))
+startGame(Player.White)
 assert(string.find(lastXml,'VEZ DE Rui',1,true))
 -- Passar durante uma rolagem não muda o turno; pending é eliminado ao passar.
 objects.dd0001.resting=false
@@ -186,7 +194,64 @@ passTurn(Player.White) flush()
 assert(string.find(lastXml,'VEZ DE Ana &amp; Igor',1,true))
 local savedTurn=onSave() onLoad(savedTurn)
 assert(string.find(lastXml,'VEZ DE Ana &amp; Igor',1,true))
+-- Compra pelo host: disponibilidade, preço, retirada única e dono persistente.
+objects.aa0001.p={x=SPACES[2].x,z=SPACES[2].z}
+onObjectDrop('White',objects.aa0001)
+assert(string.find(lastXml,'Av. 9 de Julho',1,true))
+assert(string.find(lastXml,'Compra: R$ 1000',1,true))
+assert(string.find(lastXml,'Disponível para compra',1,true))
+local takeCount=0
+objects.ee0002.takeObject=function(params)
+ takeCount=takeCount+1
+ local card=fake(params.guid,params.position.x,params.position.z)
+ card.notes='companion_title:2'
+ params.callback_function(card)
+end
+buyProperty({color='Red',host=false}) assert(takeCount==0)
+buyProperty(Player.White) assert(takeCount==1)
+assert(string.find(lastXml,'Dono: Ana &amp; Igor',1,true))
+buyProperty(Player.White) assert(takeCount==1)
+local boughtSave=onSave() onLoad(boughtSave)
+assert(string.find(lastXml,'indisponível',1,true))
+objects.aa0001.p={x=SPACES[7].x,z=SPACES[7].z} onObjectDrop('White',objects.aa0001)
+buyProperty(Player.White) assert(takeCount==1)
+assert(string.find(lastXml,'Compre uma carta',1,true))
+-- O host compra pelo outro jogador; transação assíncrona bloqueia passar/duplicar.
+passTurn(Player.White) flush()
+objects.aa0002.p={x=SPACES[3].x,z=SPACES[3].z} onObjectDrop('White',objects.aa0002)
+local receipt=nil
+objects.ee0002.takeObject=function(params) takeCount=takeCount+1 receipt=params end
+buyProperty(Player.White)
+buyProperty(Player.White) assert(takeCount==2)
+passTurn(Player.White) assert(string.find(lastXml,'VEZ DE Rui',1,true))
+local title=fake('ff0003',receipt.position.x,receipt.position.z)
+receipt.callback_function(title)
+assert(string.find(lastXml,'Dono: Rui',1,true))
+-- Último título solto no banco também pode ser comprado.
+objects.ee0002.cards={}
+local lastTitle=fake('ff0005',8,3)
+objects.aa0002.p={x=SPACES[5].x,z=SPACES[5].z} onObjectDrop('White',objects.aa0002)
+buyProperty(Player.White)
+assert(string.find(lastXml,'Dono: Rui',1,true))
+-- Layout individual, limites, persistência e restauração.
+openLayout(Player.White)
+editLayout(Player.White,'22','layout_x') editLayout(Player.White,'80','layout_y')
+editLayout(Player.White,'360','layout_w') editLayout(Player.White,'95','layout_h') editLayout(Player.White,'16','layout_font')
+applyLayout(Player.White)
+assert(string.find(lastXml,'anchorMin="0.22 0.8"',1,true))
+editLayout(Player.White,'inválido','layout_w') applyLayout(Player.White)
+assert(string.find(lastXml,'Informe números válidos',1,true))
+local layoutSave=onSave() onLoad(layoutSave)
+assert(string.find(lastXml,'anchorMin="0.22 0.8"',1,true))
+resetLayout(Player.White)
+assert(string.find(lastXml,'anchorMin="0.16 0.91"',1,true))
+-- Não deixa outro cliente alterar o layout do host.
+openLayout({host=false,color='Red'})
+editLayout({host=false,color='Red'},'88','layout_x')
+applyLayout({host=false,color='Red'})
+assert(string.find(lastXml,'anchorMin="0.16 0.91"',1,true))
 ''')
 ET.fromstring('<root>'+lua.globals().lastXml+'</root>')
 print('OK: save de 40 casas; rolagem, autorização, consumo único, movimento manual, volta, espera e timeout.')
 print('OK: 100 Notícias, 28 títulos, 8 mãos, configuração host, nomes, persistência, soma e aviso de duplas.')
+print('OK: compra única, dono/preço, host, título final, persistência e layout ajustável.')
