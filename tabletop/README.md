@@ -10,7 +10,7 @@ Os arquivos de imagem e malha são carregados por HTTPS do GitHub Pages para que
 
 ## Jogar com amigos
 
-**Mesa espelhada / um único computador:** o anfitrião pode abrir uma partida single player no Tabletop e compartilhar a tela com os amigos. Configure os nomes normalmente. **Rolar dados**, **Avançar**, **Descartar** e **Notícias**, quando usados pelo anfitrião, controlam o jogador da vez sem trocar de assento. A tecla **R** usada pelo anfitrião também registra os dados para o jogador atual. O anfitrião continua podendo **Passar vez**. O painel mostra o nome do participante representado; os amigos podem acessar apenas o Companion para administrar o banco.
+**Mesa espelhada / um único computador:** o anfitrião pode abrir uma partida single player no Tabletop e compartilhar a tela com os amigos. Configure os nomes normalmente. **Rolar dados**, **Avançar** e **Notícias**, quando usados pelo anfitrião, controlam o jogador da vez sem trocar de assento. A tecla **R** usada pelo anfitrião também registra os dados para o jogador atual. O anfitrião continua podendo **Passar vez**. O painel mostra o nome do participante representado; os amigos podem acessar apenas o Companion para administrar o banco.
 
 1. Crie uma sala multiplayer no Tabletop e carregue a mesa. Os participantes precisam do Tabletop Simulator.
 2. No painel inicial, o anfitrião escolhe de 2 a 8 participantes e preenche nomes diferentes para cada cor. Clique em **Iniciar partida**. Cada pessoa escolhe essa mesma cor no seletor de assento do Tabletop. Os peões recebem os nomes; os reservas ficam bloqueados fora do percurso. Os nomes e a configuração são preservados ao salvar a partida. Durante a partida, **Jogadores** mostra a lista; nomes e quantidade ficam bloqueados para preservar as posses.
@@ -27,9 +27,15 @@ Os arquivos de imagem e malha são carregados por HTTPS do GitHub Pages para que
 
 Após **Avançar**, o painel da casa mostra nome, preço e disponibilidade. Se a posse tiver dono registrado, mostra o nome dele e bloqueia a compra. Casas de Notícias, impostos, prisão e outros espaços especiais mostram sua instrução em vez de preço de compra. Soltar um peão manualmente sobre uma casa também atualiza esse painel.
 
-**Comprar posse** retira o título correspondente do baralho e coloca a carta aberta em uma área do centro da mesa, associada ao jogador da vez. O host opera o comprador atual sem mudar de assento. Você pode arrastar a carta para outro lugar ou para a mão do jogador. A posse fica registrada no save do Tabletop e não pode ser comprada novamente enquanto estiver com dono. Um título fora do banco sem dono registrado aparece como pendente de confirmação, evitando tratar uma carta retirada manualmente como disponível.
+**Comprar posse** retira o título correspondente do baralho e coloca a carta aberta na área nomeada do comprador, na lateral da mesa, associada ao jogador da vez. O host opera o comprador atual sem mudar de assento. Você pode arrastar a carta para outro lugar ou para a mão do jogador. A posse fica registrada no save do Tabletop e não pode ser comprada novamente enquanto estiver com dono. Um título fora do banco sem dono registrado aparece como pendente de confirmação, evitando tratar uma carta retirada manualmente como disponível.
 
-A compra no Tabletop **não debita o saldo do Companion**: registre a compra e o pagamento no aplicativo. O preço é o da referência confirmada; aluguéis, casas e hipoteca continuam a definir. O menu **Guardar / atribuir posse (host: jogador da vez)** registra o dono de uma carta retirada manualmente. Usado pelo host em uma carta já comprada, permite atribuí-la ao jogador atual; registre a transferência no Companion também.
+A compra no Tabletop **não debita o saldo do Companion**: registre a compra e o pagamento no aplicativo. O preço é o da referência confirmada; aluguéis, casas e hipoteca continuam a definir. O menu **Enviar para área do jogador (host: jogador da vez)** registra o dono de uma carta retirada manualmente. Usado pelo host em uma carta já comprada, permite atribuí-la ao jogador atual; registre a transferência no Companion também.
+
+## Áreas dos jogadores e apresentação de cartas
+
+Ao iniciar, cada jogador configurado recebe uma área física com nome e cor, nas laterais do tabuleiro. Funciona em **single player**, sem ocupante nos assentos: o anfitrião controla todas as cartas. As áreas dos participantes não usados ficam ocultas. Há seis posições por área; posses adicionais podem ficar empilhadas ou ser organizadas manualmente. Compras vão diretamente para a área do comprador. O menu **Enviar para área do jogador (host: jogador da vez)** também envia uma carta retirada manualmente. O host pode arrastar títulos entre áreas para atribuir o dono; isso atualiza o registro no Tabletop, mas a transferência financeira continua sendo registrada no Companion. Mover uma carta para fora das áreas não apaga seu dono.
+
+**Visualizar carta:** botão direito em um título ou Notícia → **Visualizar carta**. A câmera de quem acionou se centraliza na carta. Na mesa espelhada, o host apresenta essa visão aos amigos pela transmissão. Use **Visão de cima** para voltar à visão geral. Ao comprar uma Notícia pelo botão, a câmera a apresenta automaticamente; depois, você pode usar **Enviar para área do jogador** no menu da carta. A apresentação não aplica o efeito financeiro, não atribui posse e não altera a vez.
 
 ## Ajustar os controles
 
@@ -40,13 +46,13 @@ Os botões ficam em uma faixa compacta na parte inferior, e o resumo de vez/dado
 
 Clique em **Aplicar** para ver o resultado. **Restaurar tudo** recupera os padrões caso um painel fique fora da área desejada. Os ajustes ficam no save da partida; salve no Tabletop para mantê-los na próxima abertura. Este editor posiciona pelos campos, sem depender do arraste nativo, cuja posição o Tabletop não permite salvar de forma confiável. O botão Layout permanece acessível mesmo que você reposicione os outros controles.
 
-**Prisão:** para ir à prisão, mova o peão à casa 11 e marque no Companion. Para tentativas de saída, role e use **Descartar resultado** quando não houver movimento. Antes de avançar após dados iguais, confira no Companion se a terceira dupla exige prisão. Turnos e regras são controlados pelos jogadores; o script não decide automaticamente quem pode jogar.
+**Prisão:** para ir à prisão, mova o peão à casa 11 e marque no Companion. Para tentativas de saída, role e use **Passar vez** quando não houver movimento. Antes de avançar após dados iguais, confira no Companion se a terceira dupla exige prisão. Turnos e regras são controlados pelos jogadores; o script não decide automaticamente quem pode jogar.
 
 ## Notícias e títulos
 
 **Notícias:** o baralho no centro tem 100 cartas originais, criadas para esta mesa a pedido do usuário. Não são as cartas oficiais da Estrela. Há 50 recebimentos e 50 pagamentos, de R$ 300 a R$ 2.000, com total líquido zero no conjunto completo; isso não garante equilíbrio em cada partida. O anfitrião embaralha automaticamente ao iniciar. Clique em **Notícias** para revelar a próxima carta e seu aviso na tela. Registre o valor manualmente no Companion. As cartas ficam em um descarte junto do baralho; após esgotá-lo, junte os descartes, vire o baralho e embaralhe. O painel reconhece o novo baralho pelos IDs das cartas.
 
-**Títulos:** o baralho de posses contém 22 propriedades e seis ações, com nomes, cores e preços confirmados. Prefira **Comprar posse** após cair na casa. Também é possível usar **botão direito → Search**, retirar a carta e usar **Guardar / atribuir posse (host: jogador da vez)**. Cada uma das oito cores tem uma área de mão. Arrastar uma carta sozinho não muda seu dono registrado: na venda, o host deve atribuí-la ao jogador atual pelo menu e registrar a transferência no Companion.
+**Títulos:** o baralho de posses contém 22 propriedades e seis ações, com nomes, cores e preços confirmados. Prefira **Comprar posse** após cair na casa. Também é possível usar **botão direito → Search**, retirar a carta e usar **Enviar para área do jogador (host: jogador da vez)**. Cada uma das oito cores tem uma área de mão. Arrastar uma carta sozinho não muda seu dono registrado: na venda, o host deve atribuí-la ao jogador atual pelo menu e registrar a transferência no Companion.
 
 Aluguéis, casas, hotéis e hipoteca estão marcados **a definir** nos títulos, aguardando as fotos/valores oficiais. Não há peças de construção nesta versão. O Companion publicado continua com o cadastro manual existente.
 

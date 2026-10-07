@@ -24,11 +24,11 @@ local layoutOpen=false
 local layoutIndex=1
 local layoutDraft={}
 local layoutMessage=''
+local presenting={}
 local layoutItems={
  {id='hud',name='Vez e dados',x=.16,y=.91,w=340,h=86,font=17},
  {id='uiRoll',name='Rolar dados',x=.17,y=.04,w=96,h=30,font=14,button=true},
  {id='uiAdvance',name='Avançar',x=.28,y=.04,w=84,h=30,font=14,button=true},
- {id='uiDiscard',name='Descartar',x=.38,y=.04,w=90,h=30,font=14,button=true},
  {id='passTurn',name='Passar vez',x=.49,y=.04,w=96,h=30,font=14,button=true},
  {id='uiNews',name='Notícias',x=.60,y=.04,w=86,h=30,font=14,button=true},
  {id='showSetup',name='Jogadores',x=.71,y=.04,w=96,h=30,font=14,button=true},
@@ -112,6 +112,36 @@ local function layoutEditor()
     return xml..'<Text color="#bed6e8" fontSize="16" preferredHeight="55">'..esc(layoutMessage~='' and layoutMessage or 'Escolha cada botão ou painel nas setas. X/Y posicionam o centro; altere e aplique para visualizar.')..'</Text><HorizontalLayout preferredHeight="36" spacing="8"><Button onClick="applyLayout">Aplicar</Button><Button onClick="resetLayout">Restaurar tudo</Button><Button onClick="openLayout">Fechar</Button></HorizontalLayout></VerticalLayout></Panel>'
 end
 local function label(color) return config.names[color] or color end
+function areaLabel() end
+local function refreshAreas()
+    for i,color in ipairs(colors) do
+        local area=getObjectFromGUID(AREAS[color].guid)
+        if area then
+            area.clearButtons()
+            local active=config.started and i<=config.count
+            area.setInvisibleTo(active and {} or {'White','Brown','Red','Orange','Yellow','Green','Teal','Blue','Purple','Pink','Grey','Black'})
+            if active then
+                area.setName('Posses de '..label(color)..' — '..colorNames[i])
+                area.createButton({label=label(color)..'\nPOSSES · '..colorNames[i],click_function='areaLabel',function_owner=Global,position={0,.13,3.1},rotation={0,0,0},width=0,height=0,font_size=math.min(170,math.floor(2600/math.max(10,#label(color)))),font_color=color=='White' and {0.08,0.12,0.16} or {1,1,1}})
+            end
+        end
+    end
+end
+local function areaTarget(color,index)
+    local count=0
+    for key,owner in pairs(owners) do if owner==color and key~=tostring(index) then count=count+1 end end
+    local area=getObjectFromGUID(AREAS[color].guid)
+    local p=area and area.getPosition() or AREAS[color]
+    return {x=p.x+(count%3-1)*2.7,y=2+math.floor(count/6)*.08,z=p.z+.7-math.floor((count%6)/3)*3.3}
+end
+function moveTitleToArea(args)
+    local card=getObjectFromGUID(args.guid)
+    if not card or not canReceiveTitle({color=args.color}) then return false end
+    local p=areaTarget(args.color,args.property)
+    card.setPositionSmooth({p.x,p.y,p.z},false,false)
+    card.setRotation({0,180,0})
+    return true
+end
 local function controlledColor(color)
     -- O anfitrião opera o jogador atual sem trocar de assento.
     if config.started and Player[color].host then return colors[turnIndex] end
@@ -205,7 +235,7 @@ function renderUI()
         canBuy=not not enabled
     end
     if details~='' then
-        local item=layoutItems[10]
+        local item=layoutItems[9]
         local p=preference(item)
         -- Reutiliza o conteúdo de informações com dimensões escolhidas pelo host.
         info=frame(item,'<VerticalLayout padding="10" spacing="6"><Text fontSize="'..p.font..'" color="white" horizontalOverflow="Wrap" preferredHeight="'..math.max(50,p.h-52)..'">'..esc(details)..'</Text><Text fontSize="13" color="#bed6e8" preferredHeight="32">Compra e pagamento: registre no Companion.</Text></VerticalLayout>')
@@ -222,8 +252,8 @@ function renderUI()
         end
     end
     if newsText~='' then
-        local p=preference(layoutItems[11])
-        xml=xml..frame(layoutItems[11],'<VerticalLayout padding="10"><Text fontSize="'..p.font..'" color="white" horizontalOverflow="Wrap" preferredHeight="'..math.max(40,p.h-45)..'">'..esc(newsText)..'</Text><Button preferredHeight="28" onClick="closeNews">Fechar aviso</Button></VerticalLayout>')
+        local p=preference(layoutItems[10])
+        xml=xml..frame(layoutItems[10],'<VerticalLayout padding="10"><Text fontSize="'..p.font..'" color="white" horizontalOverflow="Wrap" preferredHeight="'..math.max(40,p.h-45)..'">'..esc(newsText)..'</Text><Button preferredHeight="28" onClick="closeNews">Fechar aviso</Button></VerticalLayout>')
     end
     xml=xml..info..setup..'<Button visibility="Host" rectAlignment="UpperRight" offsetXY="-12 -12" width="78" height="28" onClick="openLayout" colors="#204963|#326784|#163449|#34424a" textColor="white">Layout</Button>'..layoutEditor()
     UI.setXml(xml)
@@ -251,6 +281,7 @@ function startGame(player)
         seen[name:lower()]=true config.names[c]=name
     end
     config.started=true setupOpen=false turnIndex=1
+    refreshAreas()
     for i,c in ipairs(colors) do
         local pawn=getObjectFromGUID(pawnIds[c])
         if pawn then
@@ -265,7 +296,20 @@ function uiRoll(p) rollDice(nil,p.color) end
 function uiAdvance(p) advancePawn(nil,p.color) end
 function uiDiscard(p) discardRoll(nil,p.color) end
 function uiNews(p) drawNews(nil,p.color) end
-function topView(p) p.lookAt({position={0,1,0},pitch=80,yaw=0,distance=48}) end
+function topView(p)
+    presenting[p.color]=nil
+    p.lookAt({position={0,1,0},pitch=80,yaw=0,distance=48})
+end
+function presentCard(args)
+    local card=getObjectFromGUID(args.guid)
+    if not card then return false end
+    local p=card.getPosition()
+    local rotation=card.getRotation()
+    Player[args.color].lookAt({position={x=p.x,y=p.y or 2,z=p.z},pitch=80,yaw=rotation.y or 180,distance=7})
+    presenting[args.color]=true
+    renderUI()
+    return true
+end
 function closeNews() newsText='' renderUI() end
 function onSave() return JSON.encode({config=config,status=status,pending=pending,newsText=newsText,turnIndex=turnIndex,owners=owners,positions=positions,landing=landing,layoutPrefs=layoutPrefs}) end
 
@@ -282,6 +326,7 @@ function onLoad(saved)
     end
     local board = getObjectFromGUID('bb0001')
     if not board then return end
+    refreshAreas()
     renderUI()
     broadcastToAll('Companion: escolha a cor do seu peao. Pagamentos, duplas e prisao sao registrados no aplicativo.',{0.6,0.85,1})
 end
@@ -325,7 +370,7 @@ function rollDice(_,color)
     color=controlledColor(color)
     if not playable(color) then return end
     if purchaseBusy then printToColor('Espere o título sair do baralho.',color) return end
-    if rolling or pending then printToColor('Avance ou descarte o resultado anterior antes de rolar novamente.',color) return end
+    if rolling or pending then printToColor('Avance ou passe a vez antes de rolar novamente.',color) return end
     local a,b=getObjectFromGUID(diceIds[1]),getObjectFromGUID(diceIds[2])
     if not a or not b then printToColor('Um dado está ausente.',color) return end
     a.setPosition({-2,4,5}) b.setPosition({2,4,5}) a.randomize() b.randomize()
@@ -392,11 +437,7 @@ function buyProperty(player)
     purchaseSerial=purchaseSerial+1
     local serial=purchaseSerial
     renderUI()
-    local count=0
-    for _,owner in pairs(owners) do if owner==color then count=count+1 end end
-    local seat=1
-    for i,c in ipairs(colors) do if c==color then seat=i end end
-    local target={x=(seat-4.5)*3,y=2+math.floor(count/4)*.1,z=-7-(count%4)*2.5}
+    local target=areaTarget(color,index)
     local function receive(card)
         if serial~=purchaseSerial then return end
         owners[tostring(index)]=color
@@ -436,7 +477,23 @@ function onObjectDrop(actor,object)
             return
         end
     end
-    if object.getGUID():match('^ff') then renderUI() end
+    if object.getGUID():match('^ff') then
+        local index=tonumber(object.getGMNotes():match('^companion_title:(%d+)$'))
+        if index and config.started and Player[actor].host then
+            local p=object.getPosition()
+            for i=1,config.count do
+                local color=colors[i]
+                local mat=getObjectFromGUID(AREAS[color].guid)
+                local center=mat and mat.getPosition() or AREAS[color]
+                if math.abs(p.x-center.x)<=4.5 and math.abs(p.z-center.z)<=4.1 then
+                    owners[tostring(index)]=color
+                    object.setDescription(titleDescription({property=index}))
+                    break
+                end
+            end
+        end
+        renderUI()
+    end
 end
 
 function onObjectLeaveContainer(container,object)
@@ -447,6 +504,7 @@ function onObjectEnterContainer(container,object)
 end
 
 function drawNews(_,color)
+    local actorColor=color
     color=controlledColor(color)
     if not playable(color) or newsBusy then return end
     local deck=nil
@@ -465,6 +523,7 @@ function drawNews(_,color)
         if not n then return end
         newsText=label(color)..' · NOTÍCIAS #'..id..'\n'..n.title..'\n'..n.text..'\n'..(n.amount>0 and 'Receba R$ ' or 'Pague R$ ')..math.abs(n.amount)..(n.amount>0 and ' do banco.' or ' ao banco.')..' Registre no Companion.'
         renderUI() broadcastToAll(newsText,{0.9,0.9,0.6})
+        presentCard({guid=card.getGUID(),color=actorColor})
     end
     if deck then
         newsBusy=true

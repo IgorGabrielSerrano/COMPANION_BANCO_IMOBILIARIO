@@ -55,7 +55,7 @@ def generate(out,base,spaces,colors,obj):
     for i,n in enumerate(news):
         key=2+i//50; cardId=key*100+i%50
         card=obj('Card',n['guid'],0,0,0,nick=n['title'])
-        card.update(CardID=cardId,Hands=True,GMNotes=f"companion_news:{n['id']}",Description=n['text']+'\n'+('Receba ' if n['amount']>0 else 'Pague ')+str(abs(n['amount']))+' no Companion. Carta original, não oficial.',CustomDeck={str(key):definitions[str(key)]})
+        card.update(CardID=cardId,Hands=True,GMNotes=f"companion_news:{n['id']}",Description=n['text']+'\n'+('Receba ' if n['amount']>0 else 'Pague ')+str(abs(n['amount']))+' no Companion. Carta original, não oficial.',CustomDeck={str(key):definitions[str(key)]},LuaScript='function onLoad() self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador",function(color) local recipient=Global.call("titleRecipient",{color=color}) if recipient then Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient}) end end) end')
         newsCards.append(card)
     deck=obj('DeckCustom','ee0001',-8,1.7,3,nick='Notícias — 100 cartas originais')
     deck['Transform']['rotZ']=180
@@ -74,7 +74,7 @@ def generate(out,base,spaces,colors,obj):
         wrapped(d,'Guarde na sua mão após registrar a compra no Companion.',498,19)
         titleFaces.append(im)
         card=obj('Card',f'ff{s["numero"]:04}',0,0,0,nick=s['nome'])
-        card.update(Hands=True,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.addContextMenuItem("Guardar / atribuir posse (host: jogador da vez)", function(color) local index=tonumber(self.getGMNotes():match("companion_title:(%d+)")) local recipient=Global.call("registerTitleOwner",{color=color,property=index}) if recipient then self.setDescription(Global.call("titleDescription",{property=index})); self.deal(1,recipient) else printToColor("Confira o dono ou inicie a mesa.",color) end end) end')
+        card.update(Hands=True,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador (host: jogador da vez)", function(color) local index=tonumber(self.getGMNotes():match("companion_title:(%d+)")) local recipient=Global.call("registerTitleOwner",{color=color,property=index}) if recipient then self.setDescription(Global.call("titleDescription",{property=index})); Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient,property=index}) else printToColor("Confira o dono ou inicie a mesa.",color) end end) end')
         titleCards.append(card)
     sheet=Image.new('RGB',(4000,1800),'#f2f6f8')
     for i,im in enumerate(titleFaces): sheet.paste(im,((i%10)*400,(i//10)*600))

@@ -9,7 +9,8 @@ root=Path(__file__).resolve().parents[1]
 save=json.loads((root/'build/tabletop/Companion-Tabuleiro.json').read_text(encoding='utf-8'))
 ref=json.loads((root/'docs/tabuleiro-referencia.json').read_text(encoding='utf-8-sig'))
 assert len(ref['casas'])==len(save['SnapPoints'])==40
-assert len({o['GUID'] for o in save['ObjectStates']})==21
+assert len({o['GUID'] for o in save['ObjectStates']})==29
+assert len([o for o in save['ObjectStates'] if o['GUID'].startswith('ac')])==8
 all_cards=[c for o in save['ObjectStates'] for c in o.get('ContainedObjects',[])]
 assert len(all_cards)==128
 assert len({c['GUID'] for c in all_cards})==128
@@ -36,6 +37,10 @@ objects={} messages={} timers={} conditions={}
 Global={}
 Player=setmetatable({}, {__index=function() return {host=false} end})
 Player.White={host=true,color='White'}
+local function camera(p) lastCamera=p end
+Player.White.lookAt=camera
+Player.Red={host=false,color='Red',lookAt=camera}
+Player.Blue={host=false,color='Blue',lookAt=camera}
 UI={setXml=function(xml) lastXml=xml end}
 function getAllObjects() local a={} for _,o in pairs(objects) do table.insert(a,o) end return a end
 function getObjectFromGUID(guid) return objects[guid] end
@@ -50,19 +55,22 @@ function flush()
  for _,c in ipairs(waiting) do if c.test() then c.done() else table.insert(conditions,c) end end
 end
 function fake(guid,x,z)
- local o={resting=true,value=1,moves=0,rolls=0,p={x=x,z=z},buttons={}}
+ local o={resting=true,value=1,moves=0,rolls=0,p={x=x,y=2,z=z},buttons={}}
  o.getPosition=function() return o.p end
  o.setPosition=function(p) o.p={x=p.x or p[1],z=p.z or p[3]} end
  o.setPositionSmooth=function(p) o.setPosition(p) o.moves=o.moves+1 end
  o.randomize=function() o.rolls=o.rolls+1 end
  o.getValue=function() return o.value end
  o.createButton=function(b) table.insert(o.buttons,b) end
+ o.clearButtons=function() o.buttons={} end
+ o.setInvisibleTo=function(a) o.invisible=a end
  o.setName=function(n) o.name=n end
  o.setLock=function(v) o.locked=v end
  o.getGUID=function() return guid end
  o.getGMNotes=function() return o.notes or '' end
  o.shuffle=function() o.shuffled=true end
  o.setRotation=function(p) o.rotation=p end
+ o.getRotation=function() return {y=180} end
  o.setDescription=function(s) o.description=s end
  o.getObjects=function() return o.cards or {} end
  objects[guid]=o return o
@@ -100,6 +108,9 @@ assert(string.find(lastXml,'VEZ DE Rui',1,true))
 assert(canReceiveTitle({color='Blue'})) assert(not canReceiveTitle({color='Green'}))
 assert(objects.aa0004.locked) assert(objects.aa0002.name=='Rui — Vermelho')
 assert(objects.ee0001.shuffled)
+assert(objects.ac0001.name=='Posses de Ana & Igor — Branco')
+assert(objects.ac0002.name=='Posses de Rui — Vermelho')
+assert(#objects.ac0003.invisible==0) assert(#objects.ac0004.invisible==12)
 objects.dd0001.value=3 objects.dd0002.value=4
 rollDice(nil,'Red') flush()
 assert(string.find(lastXml,'3 + 4 = 7',1,true))
@@ -152,6 +163,10 @@ local card=fake('cc0001',-8,3) card.notes='companion_news:1'
 objects.ee0001.takeObject=function(params) params.callback_function(card) end
 drawNews(nil,'Red')
 assert(string.find(lastXml,'Bônus de produtividade',1,true))
+assert(lastCamera.distance==7 and lastCamera.position.x==card.p.x)
+assert(not string.find(lastXml,'Voltar à mesa',1,true))
+assert(not string.find(lastXml,'Descartar',1,true))
+topView(Player.Red) assert(lastCamera.distance==48)
 assert(string.find(lastXml,'Receba R$',1,true))
 local saved=onSave()
 onLoad(saved)
@@ -209,6 +224,8 @@ objects.ee0002.takeObject=function(params)
 end
 buyProperty({color='Red',host=false}) assert(takeCount==0)
 buyProperty(Player.White) assert(takeCount==1)
+assert(math.abs(objects.ff0002.p.x-AREAS.White.x)<=4.5)
+assert(math.abs(objects.ff0002.p.z-AREAS.White.z)<=4.1)
 assert(string.find(lastXml,'Dono: Ana &amp; Igor',1,true))
 buyProperty(Player.White) assert(takeCount==1)
 local boughtSave=onSave() onLoad(boughtSave)
@@ -226,6 +243,7 @@ buyProperty(Player.White) assert(takeCount==2)
 passTurn(Player.White) assert(string.find(lastXml,'VEZ DE Rui',1,true))
 local title=fake('ff0003',receipt.position.x,receipt.position.z)
 receipt.callback_function(title)
+assert(math.abs(title.p.x-AREAS.Red.x)<=4.5)
 assert(string.find(lastXml,'Dono: Rui',1,true))
 -- Último título solto no banco também pode ser comprado.
 objects.ee0002.cards={}
@@ -245,6 +263,17 @@ local layoutSave=onSave() onLoad(layoutSave)
 assert(string.find(lastXml,'anchorMin="0.22 0.8"',1,true))
 resetLayout(Player.White)
 assert(string.find(lastXml,'anchorMin="0.16 0.91"',1,true))
+-- Uma área funciona sem ocupante: host transfere carta fisicamente e salva o dono.
+objects.ff0002.setPosition({AREAS.Blue.x,2,AREAS.Blue.z})
+onObjectDrop('White',objects.ff0002)
+assert(string.find(objects.ff0002.description,'Dono: Bia',1,true))
+local areasSaved=onSave() onLoad(areasSaved)
+assert(objects.ac0003.name=='Posses de Bia — Azul')
+assert(moveTitleToArea({guid='ff0002',color='Blue',property=2}))
+assert(math.abs(objects.ff0002.p.x-AREAS.Blue.x)<=4.5)
+assert(presentCard({guid='ff0002',color='White'}))
+assert(lastCamera.position.x==objects.ff0002.p.x and lastCamera.distance==7)
+topView(Player.White) assert(lastCamera.distance==48)
 -- Não deixa outro cliente alterar o layout do host.
 openLayout({host=false,color='Red'})
 editLayout({host=false,color='Red'},'88','layout_x')
