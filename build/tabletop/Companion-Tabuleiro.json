@@ -1,0 +1,646 @@
+{
+  "SaveName": "Companion Banco Imobiliário — Tabuleiro",
+  "GameMode": "",
+  "Table": "Table_RPG",
+  "Sky": "Sky_Downtown",
+  "Note": "Abra o Companion no celular. Escolha a cor do seu peão; use os botões no centro ou mova manualmente. Dados iguais, prisão, cartas e dinheiro são administrados no Companion/na mesa.",
+  "Rules": "40 casas conforme referência confirmada por Igor. Notícias e títulos: utilizar as cartas físicas. Sem sincronização automática com o banco.",
+  "LuaScript": "SPACES={{[\"x\"]=17.0,[\"z\"]=-17.0,[\"name\"]=\"Início\",[\"kind\"]=\"inicio\"},{[\"x\"]=12.44167,[\"z\"]=-17.0,[\"name\"]=\"Av. 9 de Julho\",[\"kind\"]=\"propriedade\"},{[\"x\"]=9.34167,[\"z\"]=-17.0,[\"name\"]=\"Av. Brasil\",[\"kind\"]=\"propriedade\"},{[\"x\"]=6.225,[\"z\"]=-17.0,[\"name\"]=\"Ações do Banco\",[\"kind\"]=\"acoes\"},{[\"x\"]=3.10833,[\"z\"]=-17.0,[\"name\"]=\"Av. Beira Mar\",[\"kind\"]=\"propriedade\"},{[\"x\"]=0.00833,[\"z\"]=-17.0,[\"name\"]=\"Av. Rio Branco\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-3.10833,[\"z\"]=-17.0,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=-6.225,[\"z\"]=-17.0,[\"name\"]=\"Av. do Estado\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-9.325,[\"z\"]=-17.0,[\"name\"]=\"Ações da Estrela Card\",[\"kind\"]=\"acoes\"},{[\"x\"]=-12.44167,[\"z\"]=-17.0,[\"name\"]=\"Av. do Contorno\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=-17.0,[\"name\"]=\"Prisão / Visitante\",[\"kind\"]=\"prisao\"},{[\"x\"]=-17.0,[\"z\"]=-12.44167,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=-17.0,[\"z\"]=-9.34167,[\"name\"]=\"Av. Rebouças\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=-6.225,[\"name\"]=\"Av. Santo Amaro\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=-3.10833,[\"name\"]=\"Ações do E-commerce\",[\"kind\"]=\"acoes\"},{[\"x\"]=-17.0,[\"z\"]=-0.00833,[\"name\"]=\"R. da Consolação\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=3.10833,[\"name\"]=\"Restituição do Imposto de Renda\",[\"kind\"]=\"receber_banco\"},{[\"x\"]=-17.0,[\"z\"]=6.225,[\"name\"]=\"Av. Morumbi\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=9.325,[\"name\"]=\"Av. Higienópolis\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=12.44167,[\"name\"]=\"Av. São João\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-17.0,[\"z\"]=17.0,[\"name\"]=\"Feriado\",[\"kind\"]=\"feriado\"},{[\"x\"]=-12.44167,[\"z\"]=17.0,[\"name\"]=\"Av. Ipiranga\",[\"kind\"]=\"propriedade\"},{[\"x\"]=-9.325,[\"z\"]=17.0,[\"name\"]=\"Ações da Petrolífera\",[\"kind\"]=\"acoes\"},{[\"x\"]=-6.225,[\"z\"]=17.0,[\"name\"]=\"Receita Federal\",[\"kind\"]=\"pagar_banco\"},{[\"x\"]=-3.10833,[\"z\"]=17.0,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=0.00833,[\"z\"]=17.0,[\"name\"]=\"Av. Brigadeiro Faria Lima\",[\"kind\"]=\"propriedade\"},{[\"x\"]=3.10833,[\"z\"]=17.0,[\"name\"]=\"Av. Paulista\",[\"kind\"]=\"propriedade\"},{[\"x\"]=6.225,[\"z\"]=17.0,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=9.34167,[\"z\"]=17.0,[\"name\"]=\"Av. Recife\",[\"kind\"]=\"propriedade\"},{[\"x\"]=12.44167,[\"z\"]=17.0,[\"name\"]=\"Ações da Companhia Aérea\",[\"kind\"]=\"acoes\"},{[\"x\"]=17.0,[\"z\"]=17.0,[\"name\"]=\"Vá para a prisão\",[\"kind\"]=\"ir_prisao\"},{[\"x\"]=17.0,[\"z\"]=12.44167,[\"name\"]=\"Av. Juscelino Kubitschek\",[\"kind\"]=\"propriedade\"},{[\"x\"]=17.0,[\"z\"]=9.325,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=17.0,[\"z\"]=6.225,[\"name\"]=\"R. Oscar Freire\",[\"kind\"]=\"propriedade\"},{[\"x\"]=17.0,[\"z\"]=3.10833,[\"name\"]=\"Av. Ibirapuera\",[\"kind\"]=\"propriedade\"},{[\"x\"]=17.0,[\"z\"]=-0.00833,[\"name\"]=\"Av. Vieira Souto\",[\"kind\"]=\"propriedade\"},{[\"x\"]=17.0,[\"z\"]=-3.10833,[\"name\"]=\"Ações da Distribuidora de TV\",[\"kind\"]=\"acoes\"},{[\"x\"]=17.0,[\"z\"]=-6.225,[\"name\"]=\"Av. Presidente Vargas\",[\"kind\"]=\"propriedade\"},{[\"x\"]=17.0,[\"z\"]=-9.34167,[\"name\"]=\"Notícias\",[\"kind\"]=\"noticias\"},{[\"x\"]=17.0,[\"z\"]=-12.44167,[\"name\"]=\"Av. Niemeyer\",[\"kind\"]=\"propriedade\"}}\nOFFSETS={[\"White\"]={[\"x\"]=-0.9750000000000001,[\"z\"]=-0.45},[\"Red\"]={[\"x\"]=-0.325,[\"z\"]=-0.45},[\"Blue\"]={[\"x\"]=0.325,[\"z\"]=-0.45},[\"Green\"]={[\"x\"]=0.9750000000000001,[\"z\"]=-0.45},[\"Yellow\"]={[\"x\"]=-0.9750000000000001,[\"z\"]=0.45},[\"Orange\"]={[\"x\"]=-0.325,[\"z\"]=0.45},[\"Purple\"]={[\"x\"]=0.325,[\"z\"]=0.45},[\"Pink\"]={[\"x\"]=0.9750000000000001,[\"z\"]=0.45}}\n-- Dados físicos e avanço opcional. Dinheiro e prisão continuam no Companion.\nlocal pawnIds = {White='aa0001',Red='aa0002',Blue='aa0003',Green='aa0004',Yellow='aa0005',Orange='aa0006',Purple='aa0007',Pink='aa0008'}\nlocal diceIds = {'dd0001','dd0002'}\nlocal pending = nil\nlocal rolling = false\nlocal rollSerial = 0\n\nfunction onLoad()\n    local board = getObjectFromGUID('bb0001')\n    if not board then return end\n    board.createButton({label='ROLAR DADOS',click_function='rollDice',function_owner=Global,position={-5,0.3,0},rotation={0,0,0},width=2300,height=650,font_size=240,color={0.12,0.32,0.48},font_color={1,1,1}})\n    board.createButton({label='AVANCAR PEAO',click_function='advancePawn',function_owner=Global,position={5,0.3,0},rotation={0,0,0},width=2300,height=650,font_size=240,color={0.1,0.42,0.3},font_color={1,1,1}})\n    board.createButton({label='DESCARTAR RESULTADO',click_function='discardRoll',function_owner=Global,position={0,0.3,-3},rotation={0,0,0},width=2600,height=500,font_size=180,color={0.25,0.29,0.34},font_color={1,1,1}})\n    broadcastToAll('Companion: escolha a cor do seu peao. Pagamentos, duplas e prisao sao registrados no aplicativo.',{0.6,0.85,1})\nend\n\nfunction rollDice(_, color)\n    if not pawnIds[color] then printToColor('Escolha uma das oito cores de peao.',color) return end\n    if rolling or pending then printToColor('Avance ou descarte o resultado anterior antes de rolar novamente.',color) return end\n    local a,b = getObjectFromGUID(diceIds[1]),getObjectFromGUID(diceIds[2])\n    if not a or not b then printToColor('Um dado esta ausente. Recarregue a mesa ou restaure os dados.',color) return end\n    rolling = true\n    rollSerial = rollSerial + 1\n    local serial = rollSerial\n    a.setPosition({-2,4,5}) b.setPosition({2,4,5})\n    a.randomize() b.randomize()\n    -- Espera inicial evita ler os dados antes de o impulso começar.\n    Wait.time(function()\n        Wait.condition(function()\n            if serial ~= rollSerial then return end\n            rolling = false\n            local x,y = tonumber(a.getValue()),tonumber(b.getValue())\n            if not x or not y or x<1 or x>6 or y<1 or y>6 then\n                printToColor('Resultado invalido. Role novamente.',color) return\n            end\n            pending = {color=color,total=x+y}\n            broadcastToAll(color..': '..x..' + '..y..' = '..(x+y)..(x==y and ' | DADOS IGUAIS: marque no Companion.' or ''),{1,1,1})\n        end,function() return a.resting and b.resting end,15,function()\n            if serial ~= rollSerial then return end\n            rolling=false\n            printToColor('Os dados nao pararam. Tente novamente.',color)\n        end)\n    end,1)\nend\n\nfunction discardRoll(_,color)\n    if pending and (pending.color==color or Player[color].host) then pending=nil end\nend\n\nfunction advancePawn(_,color)\n    if not pending or pending.color~=color then printToColor('Role os dados da sua cor primeiro.',color) return end\n    local pawn = getObjectFromGUID(pawnIds[color])\n    if not pawn then printToColor('Seu peao esta ausente.',color) return end\n    local p = pawn.getPosition()\n    local nearest,distance = 1,math.huge\n    for i,space in ipairs(SPACES) do\n        local d = (p.x-space.x)^2+(p.z-space.z)^2\n        if d<distance then nearest,distance=i,d end\n    end\n    if distance>12 then printToColor('Coloque seu peao em uma casa do tabuleiro antes de avancar.',color) return end\n    local steps=pending.total\n    local target=(nearest-1+steps)%40+1\n    pending=nil -- consome antes de animar: um clique extra nao movimenta duas vezes\n    local space=SPACES[target]\n    local offsets=OFFSETS[color]\n    pawn.setPositionSmooth({space.x+offsets.x,2,space.z+offsets.z},false,false)\n    broadcastToAll(color..' chegou a '..target..': '..space.name,{0.7,0.9,1})\n    if nearest-1+steps>=40 then printToColor('Passou pelo Inicio: registre +R$ 2.000 no Companion.',color) end\n    if space.kind=='receber_banco' then printToColor('Receba R$ 2.000 do banco no Companion.',color) end\n    if space.kind=='pagar_banco' then printToColor('Pague R$ 2.000 ao banco no Companion.',color) end\n    if space.kind=='ir_prisao' then printToColor('Va para a casa 11 e marque prisao no Companion.',color) end\n    if space.kind=='noticias' then printToColor('Consulte uma carta Noticias do seu jogo.',color) end\nend\n",
+  "LuaScriptState": "",
+  "ObjectStates": [
+    {
+      "Name": "Custom_Model",
+      "GUID": "bb0001",
+      "Nickname": "Tabuleiro Companion — 40 casas",
+      "Transform": {
+        "posX": 0,
+        "posY": 1,
+        "posZ": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "scaleZ": 1
+      },
+      "ColorDiffuse": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "Locked": true,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false,
+      "CustomMesh": {
+        "MeshURL": "https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/tabletop/tabuleiro.obj",
+        "DiffuseURL": "https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/tabletop/tabuleiro-d0f36a91521d.png",
+        "NormalURL": "",
+        "ColliderURL": "",
+        "Convex": true,
+        "MaterialIndex": 3,
+        "TypeIndex": 4,
+        "CastShadows": true
+      }
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0001",
+      "Nickname": "Peão White",
+      "Transform": {
+        "posX": 16.025,
+        "posY": 2,
+        "posZ": -17.45,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.95,
+        "g": 0.95,
+        "b": 0.95
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0002",
+      "Nickname": "Peão Red",
+      "Transform": {
+        "posX": 16.675,
+        "posY": 2,
+        "posZ": -17.45,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.9,
+        "g": 0.15,
+        "b": 0.2
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0003",
+      "Nickname": "Peão Blue",
+      "Transform": {
+        "posX": 17.325,
+        "posY": 2,
+        "posZ": -17.45,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.15,
+        "g": 0.4,
+        "b": 0.95
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0004",
+      "Nickname": "Peão Green",
+      "Transform": {
+        "posX": 17.975,
+        "posY": 2,
+        "posZ": -17.45,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.1,
+        "g": 0.7,
+        "b": 0.3
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0005",
+      "Nickname": "Peão Yellow",
+      "Transform": {
+        "posX": 16.025,
+        "posY": 2,
+        "posZ": -16.55,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.95,
+        "g": 0.8,
+        "b": 0.1
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0006",
+      "Nickname": "Peão Orange",
+      "Transform": {
+        "posX": 16.675,
+        "posY": 2,
+        "posZ": -16.55,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 1,
+        "g": 0.4,
+        "b": 0.1
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0007",
+      "Nickname": "Peão Purple",
+      "Transform": {
+        "posX": 17.325,
+        "posY": 2,
+        "posZ": -16.55,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 0.65,
+        "g": 0.25,
+        "b": 0.9
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Chess_Pawn",
+      "GUID": "aa0008",
+      "Nickname": "Peão Pink",
+      "Transform": {
+        "posX": 17.975,
+        "posY": 2,
+        "posZ": -16.55,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.55,
+        "scaleY": 0.55,
+        "scaleZ": 0.55
+      },
+      "ColorDiffuse": {
+        "r": 1,
+        "g": 0.4,
+        "b": 0.7
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Die_6",
+      "GUID": "dd0001",
+      "Nickname": "Dado 1",
+      "Transform": {
+        "posX": -2,
+        "posY": 2,
+        "posZ": 5,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.9,
+        "scaleY": 0.9,
+        "scaleZ": 0.9
+      },
+      "ColorDiffuse": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    },
+    {
+      "Name": "Die_6",
+      "GUID": "dd0002",
+      "Nickname": "Dado 2",
+      "Transform": {
+        "posX": 2,
+        "posY": 2,
+        "posZ": 5,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "scaleX": 0.9,
+        "scaleY": 0.9,
+        "scaleZ": 0.9
+      },
+      "ColorDiffuse": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "Locked": false,
+      "Grid": false,
+      "Snap": true,
+      "Autoraise": true,
+      "Sticky": false,
+      "Tooltip": true,
+      "Hands": false
+    }
+  ],
+  "SnapPoints": [
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 12.44167,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 9.34167,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 6.225,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 3.10833,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 0.00833,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -3.10833,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -6.225,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -9.325,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -12.44167,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -12.44167
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -9.34167
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -6.225
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -3.10833
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": -0.00833
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": 3.10833
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": 6.225
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": 9.325
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": 12.44167
+      }
+    },
+    {
+      "Position": {
+        "x": -17.0,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -12.44167,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -9.325,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -6.225,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": -3.10833,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 0.00833,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 3.10833,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 6.225,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 9.34167,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 12.44167,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 17.0
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 12.44167
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 9.325
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 6.225
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 3.10833
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -0.00833
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -3.10833
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -6.225
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -9.34167
+      }
+    },
+    {
+      "Position": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": -12.44167
+      }
+    }
+  ],
+  "Hands": {
+    "Enable": false,
+    "DisableUnused": true,
+    "Hiding": 0
+  },
+  "Turns": {
+    "Enable": false,
+    "Type": 0,
+    "TurnOrder": [],
+    "Reverse": false,
+    "SkipEmpty": true,
+    "DisableInteractions": false,
+    "PassTurns": true
+  },
+  "Grid": {
+    "Type": 0,
+    "Lines": false,
+    "Snapping": false,
+    "Offset": false,
+    "xSize": 2,
+    "ySize": 2
+  },
+  "TabStates": {
+    "0": {
+      "title": "Como jogar",
+      "body": "Use o Companion no celular: https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/\nEscolha uma cor: White, Red, Blue, Green, Yellow, Orange, Purple ou Pink.\nRolar dados > Avançar peão. Para prisão/duplas, descarte o resultado e mova manualmente quando necessário.\nRegistre pagamentos e estado de prisão no Companion. Use suas cartas físicas de Notícias e títulos de posse.",
+      "visibleColor": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "id": 0
+    }
+  }
+}

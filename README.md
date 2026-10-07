@@ -97,3 +97,11 @@ e [como editar as cenas](godot-web/layouts/COMO-EDITAR.md).
 
 Os nomes dos bancos são fictícios. Fontes e bibliotecas incluem seus arquivos
 de licença nos diretórios de assets correspondentes.
+
+## Mesa para Tabletop Simulator
+
+[Baixe a mesa de tabuleiro](https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/tabletop/)
+com 40 casas, oito peões, dados físicos e avanço opcional. A parte bancária
+continua neste aplicativo. Veja as [instruções e limites da mesa](tabletop/README.md).
+Nomes e valores seguem a referência corrigida pelo usuário; as cartas físicas
+continuam necessárias. A importação e física aguardam validação em jogo real.

@@ -1,0 +1,254 @@
+{
+  "fonte": "Tabela corrigida pelo usuário em 2026-10-07; codex-clipboard-57e93ed6-79c6-4fc8-a450-a5d1e86ae9a2.png; correção textual do usuário: Notícias após Receita Federal e antes da Av. Brigadeiro Faria Lima",
+  "status": "referencia_confirmada_pelo_usuario; 40_casas",
+  "observacoes": [
+    "Valores das propriedades e ações são preços indicados, não aluguéis.",
+    "Restituição recebe 2000 do banco; Receita Federal paga 2000 ao banco.",
+    "Aluguéis, construção e hipoteca ainda dependem dos títulos de posse.",
+    "Referência isolada: não altera o catálogo ou as regras do Companion publicado.",
+    "Percurso com 40 casas distintas. Após a casa 40 (Av. Niemeyer), retorna à casa 1 (Início)."
+  ],
+  "casas": [
+    {
+      "numero": 1,
+      "nome": "Início",
+      "tipo": "inicio",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 2,
+      "nome": "Av. 9 de Julho",
+      "tipo": "propriedade",
+      "valor_indicado": 1000
+    },
+    {
+      "numero": 3,
+      "nome": "Av. Brasil",
+      "tipo": "propriedade",
+      "valor_indicado": 750
+    },
+    {
+      "numero": 4,
+      "nome": "Ações do Banco",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 5,
+      "nome": "Av. Beira Mar",
+      "tipo": "propriedade",
+      "valor_indicado": 600
+    },
+    {
+      "numero": 6,
+      "nome": "Av. Rio Branco",
+      "tipo": "propriedade",
+      "valor_indicado": 2400
+    },
+    {
+      "numero": 7,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 8,
+      "nome": "Av. do Estado",
+      "tipo": "propriedade",
+      "valor_indicado": 2200
+    },
+    {
+      "numero": 9,
+      "nome": "Ações da Estrela Card",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 10,
+      "nome": "Av. do Contorno",
+      "tipo": "propriedade",
+      "valor_indicado": 2200
+    },
+    {
+      "numero": 11,
+      "nome": "Prisão / Visitante",
+      "tipo": "prisao",
+      "valor_indicado": null
+    },
+    {
+      "numero": 12,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 13,
+      "nome": "Av. Rebouças",
+      "tipo": "propriedade",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 14,
+      "nome": "Av. Santo Amaro",
+      "tipo": "propriedade",
+      "valor_indicado": 1800
+    },
+    {
+      "numero": 15,
+      "nome": "Ações do E-commerce",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 16,
+      "nome": "R. da Consolação",
+      "tipo": "propriedade",
+      "valor_indicado": 1800
+    },
+    {
+      "numero": 17,
+      "nome": "Restituição do Imposto de Renda",
+      "tipo": "receber_banco",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 18,
+      "nome": "Av. Morumbi",
+      "tipo": "propriedade",
+      "valor_indicado": 4000
+    },
+    {
+      "numero": 19,
+      "nome": "Av. Higienópolis",
+      "tipo": "propriedade",
+      "valor_indicado": 3500
+    },
+    {
+      "numero": 20,
+      "nome": "Av. São João",
+      "tipo": "propriedade",
+      "valor_indicado": 1200
+    },
+    {
+      "numero": 21,
+      "nome": "Feriado",
+      "tipo": "feriado",
+      "valor_indicado": null
+    },
+    {
+      "numero": 22,
+      "nome": "Av. Ipiranga",
+      "tipo": "propriedade",
+      "valor_indicado": 1000
+    },
+    {
+      "numero": 23,
+      "nome": "Ações da Petrolífera",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 24,
+      "nome": "Receita Federal",
+      "tipo": "pagar_banco",
+      "valor_indicado": -2000
+    },
+    {
+      "numero": 25,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 26,
+      "nome": "Av. Brigadeiro Faria Lima",
+      "tipo": "propriedade",
+      "valor_indicado": 1400
+    },
+    {
+      "numero": 27,
+      "nome": "Av. Paulista",
+      "tipo": "propriedade",
+      "valor_indicado": 1600
+    },
+    {
+      "numero": 28,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 29,
+      "nome": "Av. Recife",
+      "tipo": "propriedade",
+      "valor_indicado": 1400
+    },
+    {
+      "numero": 30,
+      "nome": "Ações da Companhia Aérea",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 31,
+      "nome": "Vá para a prisão",
+      "tipo": "ir_prisao",
+      "valor_indicado": null
+    },
+    {
+      "numero": 32,
+      "nome": "Av. Juscelino Kubitschek",
+      "tipo": "propriedade",
+      "valor_indicado": 3200
+    },
+    {
+      "numero": 33,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 34,
+      "nome": "R. Oscar Freire",
+      "tipo": "propriedade",
+      "valor_indicado": 3000
+    },
+    {
+      "numero": 35,
+      "nome": "Av. Ibirapuera",
+      "tipo": "propriedade",
+      "valor_indicado": 3000
+    },
+    {
+      "numero": 36,
+      "nome": "Av. Vieira Souto",
+      "tipo": "propriedade",
+      "valor_indicado": 2600
+    },
+    {
+      "numero": 37,
+      "nome": "Ações da Distribuidora de TV",
+      "tipo": "acoes",
+      "valor_indicado": 2000
+    },
+    {
+      "numero": 38,
+      "nome": "Av. Presidente Vargas",
+      "tipo": "propriedade",
+      "valor_indicado": 2600
+    },
+    {
+      "numero": 39,
+      "nome": "Notícias",
+      "tipo": "noticias",
+      "valor_indicado": null
+    },
+    {
+      "numero": 40,
+      "nome": "Av. Niemeyer",
+      "tipo": "propriedade",
+      "valor_indicado": 2600
+    }
+  ],
+  "retorno_para": 1
+}
