@@ -4,3 +4,5 @@
 *.exe
 build/
 *.import
+__pycache__/
+*.pyc

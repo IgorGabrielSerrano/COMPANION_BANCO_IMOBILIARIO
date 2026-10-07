@@ -101,7 +101,10 @@ de licença nos diretórios de assets correspondentes.
 ## Mesa para Tabletop Simulator
 
 [Baixe a mesa de tabuleiro](https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/tabletop/)
-com 40 casas, oito peões, dados físicos e avanço opcional. A parte bancária
-continua neste aplicativo. Veja as [instruções e limites da mesa](tabletop/README.md).
-Nomes e valores seguem a referência corrigida pelo usuário; as cartas físicas
-continuam necessárias. A importação e física aguardam validação em jogo real.
+com 40 casas, configuração de até oito jogadores com peões nomeados, dados
+físicos e painel com soma e aviso de duplas. Inclui 100 Notícias originais e
+28 títulos de posse que podem ser guardados nas mãos dos jogadores. A parte
+bancária continua neste aplicativo. Veja as [instruções da mesa](tabletop/README.md).
+Nomes e preços seguem a referência corrigida pelo usuário; aluguéis, construção
+e hipoteca aguardam confirmação. A importação, física e correção da orientação
+da mesa v2 aguardam validação em jogo real.
