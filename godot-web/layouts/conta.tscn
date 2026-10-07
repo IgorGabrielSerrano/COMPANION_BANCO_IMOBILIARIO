@@ -104,7 +104,7 @@ mouse_filter = 2
 script = ExtResource("2")
 tint = Color(0.918, 0.769, 0.42, 1)
 spin = true
-metadata/tone = "gold"
+metadata/tone = "cardText"
 
 [node name="Acoes" type="Control" parent="." unique_id=430683204]
 anchors_preset = 0

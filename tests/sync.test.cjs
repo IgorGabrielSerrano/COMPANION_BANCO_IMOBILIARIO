@@ -66,6 +66,23 @@ assert.equal(alice.run('chosenBankTheme()'), 'new');
 alice.run("chooseBankTheme('invalid')");
 assert.equal(alice.run('chosenBankTheme()'), 'new');
 console.log('OK: temas independentes por jogador, persistência por nome e estado financeiro preservado.');
+for (const theme of ['c4', 'mu', 'intel', 'new', 'nexus']) {
+    for (const mode of ['create', 'join']) {
+        const trial = page();
+        trial.run(`initHostPeer = () => {}; initClientPeer = () => {};
+            localStorage.setItem('companion_player_themes', JSON.stringify({igor:'intel'}));
+            chooseBankTheme('${theme}');`);
+        assert.equal(trial.run('chosenBankTheme()'), theme);
+        if (mode === 'create') trial.run("document.getElementById('create-banker').value='Igor'; createRoom();");
+        else trial.run("document.getElementById('join-name').value=' IGOR '; document.getElementById('join-pin').value='5678'; joinRoom();");
+        assert.equal(trial.run('chosenBankTheme()'), theme);
+        assert.equal(trial.run("JSON.parse(localStorage.getItem('companion_player_themes')).igor"), theme);
+        assert.equal(trial.run("localStorage.getItem('companion_pending_bank_theme')"), null);
+        trial.run("resetRoom(); state.playerName='igor'; state.pin='5678';");
+        assert.equal(trial.run('chosenBankTheme()'), theme);
+    }
+}
+console.log('OK: escolha no lobby substitui preferência antiga ao criar/entrar e persiste ao voltar nos cinco temas.');
 alice.run(`document.getElementById('prop-name-input').value = 'Avenida';
     document.getElementById('prop-price-input').value = '3000';
     document.getElementById('prop-rent-input').value = '500';

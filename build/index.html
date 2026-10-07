@@ -74,6 +74,7 @@
         body.godot-ready .modal-content { background:var(--bank-surface,#1d1f22); color:var(--bank-text,#f8f8fa); border-color:var(--bank-border,#33363c); box-shadow:0 24px 90px #0005; max-height:calc(100dvh - 32px); scrollbar-width:thin; scrollbar-color:var(--bank-border) transparent; }
         body.godot-ready label { color:var(--bank-muted); }
         body.godot-ready input, body.godot-ready select { min-height:44px; background:var(--bank-bg); border-color:var(--bank-border); color:var(--bank-text); }
+        body.godot-ready input::placeholder { color:var(--bank-muted); opacity:1; }
         body.godot-ready .modal button { min-height:44px; font-size:0.86rem; background:var(--bank-soft); color:var(--bank-text); border-color:var(--bank-border); padding:10px 12px; }
         body.godot-ready .modal .btn-green, body.godot-ready .modal .btn-blue, body.godot-ready .modal .btn-gold { background:var(--bank-accent); color:var(--bank-accentText); }
         body.godot-ready[data-bank-theme="new"] .modal .btn-blue { background:linear-gradient(120deg,var(--bank-gradientFrom),var(--bank-gradientTo)); color:white; }
@@ -384,7 +385,7 @@
         </div>
     </div>
 
-    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=9d71716e5745" allow="autoplay" loading="eager"></iframe>
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=a4470c9d0e6e" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -440,6 +441,8 @@
 
         function chosenBankTheme() {
             let id = localStorage.getItem('companion_bank_theme') || 'c4';
+            const lobbyChoice = localStorage.getItem('companion_pending_bank_theme');
+            if (!state.pin && Object.hasOwn(BANK_THEMES, lobbyChoice)) return lobbyChoice;
             try {
                 const choices = JSON.parse(localStorage.getItem('companion_player_themes') || '{}');
                 id = choices[normalizePlayerName(state.playerName || '')] || id;
@@ -466,7 +469,8 @@
             localStorage.setItem('companion_bank_theme', id);
             let choices = {};
             try { choices = JSON.parse(localStorage.getItem('companion_player_themes') || '{}'); } catch (_) {}
-            if (state.playerName) choices[normalizePlayerName(state.playerName)] = id;
+            if (!state.pin) localStorage.setItem('companion_pending_bank_theme', id);
+            else if (state.playerName) choices[normalizePlayerName(state.playerName)] = id;
             localStorage.setItem('companion_player_themes', JSON.stringify(choices));
             applyBankTheme();
             renderBankSettings();
@@ -777,6 +781,14 @@
         }
 
         function enterGame(isRestored = false) {
+            const lobbyChoice = localStorage.getItem('companion_pending_bank_theme');
+            if (state.playerName && Object.hasOwn(BANK_THEMES, lobbyChoice)) {
+                let choices = {};
+                try { choices = JSON.parse(localStorage.getItem('companion_player_themes') || '{}'); } catch (_) {}
+                choices[normalizePlayerName(state.playerName)] = lobbyChoice;
+                localStorage.setItem('companion_player_themes', JSON.stringify(choices));
+                localStorage.removeItem('companion_pending_bank_theme');
+            }
             if (state.isBanker) {
                 migratePropertyInvestments();
                 migrateLegacyPayments();

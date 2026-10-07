@@ -156,7 +156,7 @@ script=ExtResource("2")
 kind="coin"
 tint=Color(0.918,0.769,0.42,1)
 spin=true
-metadata/tone="gold"
+metadata/tone="accent"
 
 [node name="Jogadores" type="Button" parent="Abas"]
 layout_mode=0

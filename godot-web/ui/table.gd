@@ -113,6 +113,8 @@ func _apply_palette() -> void:
 	skin.default_font = regular
 	skin.default_font_size = 15
 	for type in ["Label","Button","LineEdit"]: skin.set_color("font_color",type,_c("text"))
+	skin.set_color("font_placeholder_color","LineEdit",_c("muted"))
+	skin.set_color("caret_color","LineEdit",_c("accent"))
 	theme = skin
 	font_bold = FontVariation.new()
 	font_bold.base_font = font_source
@@ -294,7 +296,8 @@ func _skin_node(node: Node) -> void:
 		node.add_theme_color_override("font_pressed_color",_c("text"))
 		node.add_theme_font_override("font",font_bold)
 	elif node is Control and node.get_script() == Icon:
-		node.tint = Color("#eac46b") if node.get_meta("tone","") == "gold" else _c("accent")
+		node.tint = _c(node.get_meta("tone","accent"))
+		if node.kind == "coin" and palette.id in ["c4","intel"]: node.tint = Color("#eac46b")
 		if node.kind == "coin": node.spin = not reduced
 	for child in node.get_children(): _skin_node(child)
 
@@ -346,6 +349,9 @@ func _text_input(parent: Node, placeholder: String, qa_key: String) -> LineEdit:
 	field.set_meta("qa_key",qa_key)
 	field.placeholder_text = placeholder
 	field.custom_minimum_size.y = 46
+	field.add_theme_color_override("font_color",_c("text"))
+	field.add_theme_color_override("font_placeholder_color",_c("muted"))
+	field.add_theme_color_override("caret_color",_c("accent"))
 	field.add_theme_stylebox_override("normal",_style(_c("bg"),_c("border"),10,10))
 	field.add_theme_stylebox_override("focus",_style(_c("bg"),_c("accent"),10,10))
 	parent.add_child(field)
@@ -686,6 +692,8 @@ func _publish_layout() -> void:
 	var data := {"theme":palette.id,"tab":active_tab,"screen":active_screen,"buttons":controls,
 		"scroll":{"x":area.position.x*ratio.x,"y":area.position.y*ratio.y,"width":area.size.x*ratio.x,"height":area.size.y*ratio.y,"offset":scroll_area.scroll_vertical},
 		"coinSpinning":is_instance_valid(coin_icon) and coin_icon.spin,"texts":texts,"missingGlyphs":missing}
+	if is_instance_valid(coin_icon): data["balanceCoinColor"] = coin_icon.tint.to_html(false)
+	if is_instance_valid(navigation): data["accountCoinColor"] = navigation.get_node("Conta/Icone").tint.to_html(false)
 	JavaScriptBridge.eval("window.parent.companionLayout="+JSON.stringify(data))
 
 func _collect_controls(node: Node, controls: Dictionary, ratio: Vector2) -> void:
@@ -694,6 +702,9 @@ func _collect_controls(node: Node, controls: Dictionary, ratio: Vector2) -> void
 		if not key.is_empty():
 			var rect: Rect2 = (node as Control).get_global_rect()
 			controls[key] = {"x":rect.position.x*ratio.x,"y":rect.position.y*ratio.y,"width":rect.size.x*ratio.x,"height":rect.size.y*ratio.y}
+			if node is LineEdit:
+				controls[key]["placeholderColor"] = node.get_theme_color("font_placeholder_color").to_html(false)
+				controls[key]["textColor"] = node.get_theme_color("font_color").to_html(false)
 	for child in node.get_children(): _collect_controls(child,controls,ratio)
 
 func _collect_texts(node: Node, texts: Array, missing: Array) -> void:

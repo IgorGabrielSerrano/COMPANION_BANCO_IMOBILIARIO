@@ -28,6 +28,12 @@ MuBank, Intel Bank, NeoBank and Nexus Bank are fictional parody names. Preferenc
 modify or broadcast the room's financial state. The parent page supplies one
 palette to both Godot and the HTML form overlays.
 
+An explicit lobby theme choice overrides a returning player's previous choice
+when they create or join a room and is then saved under their normalized name.
+Input text and placeholders use the palette's text and muted colors. MuBank,
+NeoBank and Nexus Bank use card-text contrast for the balance coin and accent
+color for the Account navigation coin. C4 Bank and Intel Bank retain gold coins.
+
 Only the compact header and six-tab navigation stay fixed. The Account page,
 including balance, payments, the player overview and recent activity, scrolls
 as a whole. Players, Properties, History and Prison have dedicated views.

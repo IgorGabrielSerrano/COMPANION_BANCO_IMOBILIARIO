@@ -61,11 +61,24 @@ def run(channel):
                 page.wait_for_timeout(220)
 
             page.screenshot(path=str(screenshots / "lobby.png"))
+            page.evaluate("localStorage.setItem('companion_player_themes', JSON.stringify({igor:'c4'}))")
+            for bank in ["c4", "intel", "new", "nexus", "mu"]:
+                click_canvas("settings")
+                page.locator(f'.bank-theme-choice[data-theme="{bank}"]').click()
+                page.wait_for_function("id => companionLayout.theme === id", arg=bank)
+                page.locator("#modal-bank-settings .btn-blue").click()
+                palette = page.evaluate("BANK_THEMES[chosenBankTheme()]")
+                for key in ["name_input", "pin_input", "cash_input"]:
+                    assert layout()["buttons"][key]["placeholderColor"] == palette["muted"].lstrip("#")
+                    assert layout()["buttons"][key]["textColor"] == palette["text"].lstrip("#")
+                page.screenshot(path=str(screenshots / f"{bank}-lobby.png"))
             click_canvas("name_input")
             page.keyboard.type("Igor")
             click_canvas("create")
             page.wait_for_function("state.isBanker && state.playerName === 'Igor' && companionLayout.screen === 'game'")
             page.wait_for_timeout(300)
+            assert page.evaluate("chosenBankTheme()") == "mu", "Lobby choice must override Igor's old C4 preference"
+            assert layout()["theme"] == "mu"
             assert layout()["scroll"]["height"] / 844 > 0.72
             assert layout()["coinSpinning"]
             sizes = [layout()["buttons"][key] for key in ["pay_player", "pay_bank", "receive", "go"]]
@@ -152,6 +165,11 @@ def run(channel):
                 assert page.evaluate("chosenBankTheme()") == bank
                 for tab in ["conta", "jogadores", "posses", "historico", "prisao", "pix"]:
                     select_tab(tab)
+                    expected_nav_coin = "eac46b" if bank in ["c4", "intel"] else page.evaluate("BANK_THEMES[chosenBankTheme()].accent.slice(1)")
+                    assert layout()["accountCoinColor"] == expected_nav_coin
+                    if tab == "conta":
+                        expected_balance_coin = "eac46b" if bank in ["c4", "intel"] else page.evaluate("BANK_THEMES[chosenBankTheme()].cardText.slice(1)")
+                        assert layout()["balanceCoinColor"] == expected_balance_coin
                     assert not layout()["missingGlyphs"], (bank, tab, layout()["missingGlyphs"])
                     page.screenshot(path=str(screenshots / f"{bank}-{tab}.png"))
                 assert page.evaluate("state.players[state.playerId].balance") == 25000
