@@ -27,6 +27,10 @@ O **Pix da mesa** usa QR para identificar jogadores e abrir o pagamento dentro
 do jogo. Todo dinheiro é fictício: não há integração com bancos nem Pix real.
 O leitor de QR solicita acesso à câmera quando você toca em escanear.
 
+Consulte o [guia de suporte e diagnóstico](docs/suporte.md) para conferir
+problemas de conexão, recuperação, câmera e operações da mesa. Ele inclui um
+caso real de reprodução, diagnóstico, correção e validação deste projeto.
+
 ## O que o projeto demonstra
 
 - Interface em Godot exportada para a web, com navegação por abas e rolagem por toque.

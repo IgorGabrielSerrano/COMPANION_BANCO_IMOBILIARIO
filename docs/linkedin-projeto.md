@@ -8,16 +8,18 @@ Companion Banco Imobiliário — aplicativo web com Godot
 
 Projeto pessoal de um aplicativo web para acompanhar partidas de Banco Imobiliário no tabuleiro, com saldos, pagamentos, posses, casas, hipoteca, prisão e histórico compartilhado entre jogadores.
 
-Trabalhei a experiência de uso com interface em Godot Web, navegação por abas, temas personalizados de bancos fictícios, animações de moedas e efeitos sonoros. A aplicação permite criar mesas com PIN, sincronizar jogadores e escanear um QR para iniciar pagamentos de aluguel dentro da partida.
+Trabalhei a experiência de uso com interface em Godot Web, navegação por abas, temas personalizados, animações e efeitos sonoros. A aplicação permite criar mesas com PIN, sincronizar jogadores e escanear QR para iniciar pagamentos de aluguel dentro da partida.
 
-Implementei também a revisão de transações pelo banqueiro, com reversão individual ou em lote, e um guia de regras com busca por palavras. O projeto utiliza Godot/GDScript, JavaScript, HTML, PeerJS/WebRTC e publicação pelo GitHub Pages, com testes de lógica e de interface mobile.
+O projeto inclui revisão e reversão de transações pelo banqueiro, recuperação de partidas e guia de regras com busca. Tecnologias: Godot/GDScript, JavaScript, HTML, PeerJS/WebRTC e GitHub Pages.
+
+Além do desenvolvimento, o trabalho envolveu reproduzir falhas, validar correções, testar a interface mobile e documentar instruções para usuários — práticas relacionadas à resolução de problemas e ao suporte técnico.
 
 Aplicativo para testar: https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/
 Código e instruções: https://github.com/IgorGabrielSerrano/COMPANION_BANCO_IMOBILIARIO
 
 ## Competências relacionadas
 
-Godot · GDScript · JavaScript · Desenvolvimento web · Design de interfaces · Testes de software · GitHub
+Competências associadas no LinkedIn: JavaScript · Teste de software · Documentação técnica.
 
 ## Como testar
 
