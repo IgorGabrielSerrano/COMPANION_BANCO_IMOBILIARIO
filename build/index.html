@@ -51,6 +51,24 @@
         .quick-amounts button { flex: 1; padding: 8px; font-size: 0.8rem; }
         .status-badge { display: inline-block; width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; }
         .status-badge.offline { background: var(--accent-red); }
+        @keyframes enter-card {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes connection-pulse {
+            50% { box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.12); }
+        }
+        #screen-lobby, #screen-player { animation: enter-card 350ms ease-out; }
+        .modal-content { animation: enter-card 200ms ease-out; }
+        .status-badge:not(.offline) { animation: connection-pulse 2s ease-in-out infinite; }
+        button:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+        @media (hover: hover) {
+            button:hover { transform: translateY(-2px); filter: brightness(1.12); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+            button:hover, button:active { transform: none; }
+        }
     </style>
 </head>
 <body>
@@ -116,10 +134,20 @@
             <!-- SISTEMA DE POSSES (MINHAS PROPRIEDADES) -->
             <div class="card" style="padding: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 0.8rem; color: var(--subtext); font-weight: 600;">🏠 Minhas Posses (Propriedades):</span>
+                    <span style="font-size: 0.8rem; color: var(--subtext); font-weight: 600;">🏠 Minhas Posses:</span>
                     <button class="btn-blue btn-small" onclick="openPropertyModal()">➕ Comprar Posse</button>
                 </div>
-                <div id="my-properties-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+                <div id="my-properties-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+
+            <div class="card">
+                <div id="jail-status" aria-live="polite" style="margin-bottom:8px;">🔓 Livre: 0/3</div>
+                <button id="btn-jail-enter" onclick="jailAction('ENTER')">🔒 Ir para a cadeia</button>
+                <div id="jail-actions" class="grid-2 hidden">
+                    <button onclick="jailAction('ROUND')">⏳ Mais 1 rodada</button>
+                    <button class="btn-green" onclick="jailAction('DOUBLES')">🎲 Tirei dados iguais</button>
+                    <small style="grid-column:span 2; color:var(--subtext);">Ao completar 3 rodadas ou tirar dados iguais, você sai e a contagem volta a 0/3.</small>
+                </div>
             </div>
 
             <!-- JOGADORES NA MESA -->
@@ -196,6 +224,56 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL DE TRANSFERIR POSSE -->
+        <div id="modal-transfer-prop" class="modal hidden">
+            <div class="modal-content">
+                <h3>🔄 Transferir Posse para Outro Jogador</h3>
+                <p style="font-size:0.82rem; color:var(--subtext);">O comprador pagará o valor definido para <b>você</b>. A posse será transferida para ele.</p>
+                <input type="hidden" id="transfer-prop-idx" value="-1">
+
+                <div style="background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:10px;">
+                    <div style="font-size:0.75rem; color:var(--subtext);">Posse sendo transferida:</div>
+                    <div id="transfer-prop-name" style="font-weight:bold; color:var(--accent-gold); margin-top:2px;">-</div>
+                </div>
+
+                <label>Transferir para:</label>
+                <select id="transfer-prop-recipient"></select>
+
+                <label>Valor de Venda (R$) — O comprador paga para você:</label>
+                <input type="number" id="transfer-prop-price" placeholder="Ex: 3500">
+
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button style="flex:1" onclick="closeTransferModal()">Cancelar</button>
+                    <button class="btn-green" style="flex:1" onclick="confirmTransferProp()">✅ Confirmar Transferência</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE HIPOTECAR POSSE -->
+        <div id="modal-mortgage-prop" class="modal hidden">
+            <div class="modal-content">
+                <h3>🏚️ Hipotecar Posse ao Banco</h3>
+                <input type="hidden" id="mortgage-prop-idx" value="-1">
+
+                <div style="background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:10px;">
+                    <div style="font-size:0.75rem; color:var(--subtext);">Posse sendo hipotecada:</div>
+                    <div id="mortgage-prop-name" style="font-weight:bold; color:var(--accent-gold); margin-top:2px;">-</div>
+                </div>
+
+                <div style="background:#1c2a1e; border:1px solid #2ecc71; border-radius:8px; padding:10px;">
+                    <div style="font-size:0.8rem; color:var(--subtext);">Você vai receber do Banco:</div>
+                    <div id="mortgage-prop-value" style="font-size:1.5rem; font-weight:bold; color:var(--accent-green);">R$ 0</div>
+                    <div style="font-size:0.75rem; color:var(--subtext); margin-top:2px;">(metade do preço de compra)</div>
+                </div>
+                <p style="font-size:0.82rem; color:var(--accent-red);">⚠️ A posse será removida e você não poderá mais cobrar aluguel.</p>
+
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button style="flex:1" onclick="closeMortgageModal()">Cancelar</button>
+                    <button class="btn-gold" style="flex:1" onclick="confirmMortgage()">🏦 Hipotecar e Receber</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -212,6 +290,10 @@
         let peer = null;
         let connections = [];
         let hostConn = null;
+        let receivedInitialState = false;
+        let previousVisualState = null;
+        const handledCommands = new Set();
+        const clientId = crypto.randomUUID();
         const channel = new BroadcastChannel('banco_imobiliario_channel');
 
         // Restore Session on Page Refresh
@@ -282,6 +364,7 @@
             state.isBanker = true;
             state.players = {};
             state.transactions = [];
+            state.startingCash = cash;
 
             state.players[state.playerId] = {
                 name: banker + ' (Banqueiro)',
@@ -334,13 +417,11 @@
                 else initClientPeer();
             }
 
-            channel.onmessage = (e) => {
-                if (e.data && e.data.pin === state.pin) {
-                    state.players = e.data.players;
-                    state.transactions = e.data.transactions;
-                    saveSession();
-                    updateUI();
-                }
+            channel.onmessage = ({data}) => {
+                if (!data || data.pin !== state.pin || data.sender === clientId) return;
+                if (data.type === 'SYNC' && !state.isBanker) handleIncomingData(data);
+                else if (data.type === 'COMMAND' && state.isBanker) handleIncomingData(data.command);
+                else if (data.type === 'END') resetRoom();
             };
         }
 
@@ -354,16 +435,17 @@
                 connections.push(conn);
                 conn.on('data', (data) => {
                     handleIncomingData(data);
-                    broadcastState();
                 });
-                conn.on('open', () => broadcastState());
+                // JOIN sends the initial state after the player is registered.
             });
 
-            peer.on('error', () => setStatus('Sincronizado Local', true));
+            peer.on('error', () => setStatus('Conexão indisponível', false));
         }
 
         function initClientPeer() {
             peer = new Peer();
+            sendToHost({ type: 'JOIN', player: { id: state.playerId, data: state.players[state.playerId] } });
+            peer.on('error', () => setStatus('Conexão indisponível', false));
             peer.on('open', () => {
                 const hostId = 'banco-imobiliario-room-' + state.pin;
                 hostConn = peer.connect(hostId);
@@ -374,57 +456,138 @@
                 });
 
                 hostConn.on('data', (data) => handleIncomingData(data));
-                hostConn.on('error', () => setStatus('Conexão Local', true));
+                hostConn.on('error', () => setStatus('Conexão indisponível', false));
+                hostConn.on('close', () => setStatus('Banqueiro desconectado', false));
             });
         }
 
         function sendToHost(msg) {
-            if (hostConn && hostConn.open) {
-                hostConn.send(msg);
-            }
-            channel.postMessage({ pin: state.pin, players: state.players, transactions: state.transactions });
+            msg.commandId = msg.commandId || crypto.randomUUID();
+            msg.actorId = state.playerId;
+            if (state.isBanker) return handleIncomingData(msg);
+            if (hostConn && hostConn.open) hostConn.send(msg);
+            channel.postMessage({ type: 'COMMAND', pin: state.pin, sender: clientId, command: msg });
         }
 
         function broadcastState() {
+            if (!state.isBanker) return;
             saveSession();
-            channel.postMessage({ pin: state.pin, players: state.players, transactions: state.transactions });
-            connections.forEach(c => {
-                if (c.open) {
-                    c.send({ type: 'SYNC', players: state.players, transactions: state.transactions });
-                }
-            });
+            const msg = { type: 'SYNC', pin: state.pin, sender: clientId,
+                players: state.players, transactions: state.transactions };
+            channel.postMessage(msg);
+            connections.forEach(c => { if (c.open) c.send(msg); });
         }
 
         function handleIncomingData(data) {
+            if (!data || typeof data !== 'object') return;
+            if (data.type === 'END') return resetRoom();
             if (data.type === 'SYNC') {
+                if (state.isBanker) return;
+                if (!data.players || !data.players[state.playerId]) {
+                    if (receivedInitialState) resetRoom();
+                    return;
+                }
                 state.players = data.players;
-                state.transactions = data.transactions;
+                state.transactions = data.transactions || [];
+                receivedInitialState = true;
+                setStatus('Conectado à Mesa #' + state.pin);
                 saveSession();
                 updateUI();
-            } else if (data.type === 'JOIN') {
-                state.players[data.player.id] = data.player.data;
-                broadcastState();
-                updateUI();
-            } else if (data.type === 'TRANSFER') {
-                const tx = data.tx;
-                if (state.players[tx.fromId]) state.players[tx.fromId].balance -= tx.amount;
-                if (state.players[tx.toId]) state.players[tx.toId].balance += tx.amount;
-                state.transactions.push(tx);
-                broadcastState();
-                updateUI();
-            } else if (data.type === 'UPDATE_PROPERTIES') {
-                if (state.players[data.playerId]) {
-                    state.players[data.playerId].properties = data.properties;
-                    broadcastState();
-                    updateUI();
-                }
+                return;
             }
+            if (!state.isBanker || handledCommands.has(data.commandId)) return;
+            if (data.commandId) handledCommands.add(data.commandId);
+            const actor = state.players[data.actorId];
+            if (data.type === 'JOIN') {
+                if (!data.player || data.player.id !== data.actorId) return;
+                if (!state.players[data.player.id]) {
+                    const banker = Object.values(state.players).find(p => p.isBanker);
+                    state.players[data.player.id] = { name: data.player.data.name,
+                        balance: banker ? (state.startingCash || 25000) : 25000,
+                        isBanker: false, properties: [], jailed: false, jailRounds: 0 };
+                }
+            } else if (!actor) return;
+            else if (data.type === 'LEAVE') {
+                delete state.players[data.actorId];
+            } else if (data.type === 'TRANSFER' || data.type === 'BUY_PROPERTY') {
+                const tx = data.tx;
+                if (!tx || !Number.isSafeInteger(tx.amount) || tx.amount <= 0) return;
+                if (tx.fromId !== data.actorId && !(tx.fromId === 'BANK' && tx.toId === data.actorId)) return;
+                const from = state.players[tx.fromId], to = state.players[tx.toId];
+                if ((tx.fromId !== 'BANK' && !from) || (tx.toId !== 'BANK' && !to)) return;
+                if (from && from.balance < tx.amount) return;
+                if (data.type === 'BUY_PROPERTY') {
+                    if (tx.fromId !== data.actorId || tx.toId !== 'BANK' ||
+                        !data.property || !data.property.name || !Number.isSafeInteger(data.property.rent) || data.property.rent <= 0) return;
+                    (actor.properties ||= []).push({ name: data.property.name, price: tx.amount, rent: data.property.rent });
+                }
+                if (from) from.balance -= tx.amount;
+                if (to) to.balance += tx.amount;
+                state.transactions.push({ ...tx, from: from ? from.name : '🏦 Banco', to: to ? to.name : '🏦 Banco' });
+            } else if (data.type === 'EDIT_PROPERTY') {
+                const prop = (actor.properties || [])[data.index];
+                if (!prop || !data.name || !Number.isSafeInteger(data.rent) || data.rent <= 0) return;
+                prop.name = data.name;
+                prop.rent = data.rent;
+            } else if (data.type === 'DELETE_PROPERTY') {
+                if (!(actor.properties || [])[data.index]) return;
+                actor.properties.splice(data.index, 1);
+            } else if (data.type === 'JAIL') {
+                if (data.action === 'ENTER' && !actor.jailed) {
+                    actor.jailed = true;
+                    actor.jailRounds = 0;
+                } else if (data.action === 'DOUBLES' && actor.jailed) {
+                    actor.jailed = false;
+                    actor.jailRounds = 0;
+                } else if (data.action === 'ROUND' && actor.jailed) {
+                    actor.jailRounds = (actor.jailRounds || 0) + 1;
+                    if (actor.jailRounds >= 3) {
+                        actor.jailed = false;
+                        actor.jailRounds = 0;
+                    }
+                } else return;
+            } else return;
+            broadcastState();
+            updateUI();
+        }
+
+        function jailAction(action) {
+            sendToHost({ type: 'JAIL', action });
+        }
+
+        function resetRoom() {
+            clearSession();
+            const oldPeer = peer;
+            if (oldPeer) setTimeout(() => oldPeer.destroy(), 300);
+            peer = null;
+            channel.onmessage = null;
+            state = { pin: '', playerId: '', playerName: '', isBanker: false, players: {}, transactions: [] };
+            connections = [];
+            hostConn = null;
+            handledCommands.clear();
+            receivedInitialState = false;
+            previousVisualState = null;
+            document.querySelectorAll('.modal').forEach(modal => modal.classList.add('hidden'));
+            document.getElementById('screen-player').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.remove('hidden');
+            setStatus('Offline', false);
         }
 
         function updateUI() {
             const myData = state.players[state.playerId] || { balance: 25000, properties: [] };
             document.getElementById('balance-amount').innerText = formatMoney(myData.balance);
+            const visualState = {
+                balance: myData.balance,
+                properties: JSON.stringify(myData.properties || []),
+                jail: `${!!myData.jailed}:${myData.jailRounds || 0}`,
+                transactions: state.transactions.length
+            };
+            const previous = previousVisualState;
             
+            document.getElementById('jail-status').innerText = myData.jailed ? `🔒 Preso: ${myData.jailRounds || 0}/3` : '🔓 Livre: 0/3';
+            document.getElementById('btn-jail-enter').classList.toggle('hidden', !!myData.jailed);
+            document.getElementById('jail-actions').classList.toggle('hidden', !myData.jailed);
+
             // Render My Properties Chips
             const myPropsList = document.getElementById('my-properties-list');
             myPropsList.innerHTML = '';
@@ -460,7 +623,7 @@
 
                 row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; width:100%;">
-                        <span><b>${p.name}</b> ${pId === state.playerId ? ' (Você)' : ''}</span>
+                        <span><b>${p.name}</b> ${pId === state.playerId ? ' (Você)' : ''}<br><small>${p.jailed ? '🔒 Preso: ' + (p.jailRounds || 0) + '/3' : '🔓 Livre: 0/3'}</small></span>
                         <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
                     </div>
                     ${propsHtml}
@@ -482,6 +645,26 @@
             if (!document.getElementById('modal-tx').classList.contains('hidden') && currentModalMode === 'PAY_PLAYER') {
                 refreshRecipientDropdown();
             }
+            if (previous) {
+                if (previous.balance !== visualState.balance) {
+                    animateFeedback(document.getElementById('balance-amount'),
+                        visualState.balance > previous.balance ? '#2ecc71' : '#e74c3c');
+                }
+                if (previous.properties !== visualState.properties) animateFeedback(myPropsList, '#f1c40f');
+                if (previous.jail !== visualState.jail) animateFeedback(document.getElementById('jail-status'), '#f1c40f');
+                if (visualState.transactions > previous.transactions) animateFeedback(feed.children[1], '#f1c40f');
+            }
+            previousVisualState = visualState;
+        }
+
+        function animateFeedback(element, color) {
+            if (!element || !element.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            element.getAnimations().forEach(animation => animation.cancel());
+            element.animate([
+                { transform: 'scale(1)', color },
+                { transform: 'scale(1.035)', color, offset: 0.35 },
+                { transform: 'scale(1)' }
+            ], { duration: 450, easing: 'ease-out' });
         }
 
         // PROPERTY MANAGEMENT MODAL
@@ -522,82 +705,36 @@
 
         function saveProperty() {
             const name = document.getElementById('prop-name-input').value.trim();
-            const price = parseInt(document.getElementById('prop-price-input').value);
-            const rent = parseInt(document.getElementById('prop-rent-input').value);
-            const editIdx = parseInt(document.getElementById('prop-edit-index').value);
-            const myData = state.players[state.playerId];
-
-            if (editIdx < 0) {
-                // New Purchase Validation
-                if (!name || isNaN(price) || price <= 0 || isNaN(rent) || rent <= 0) {
-                    return alert('Por favor informe o Nome, o Preço de Compra e o Valor do Aluguel!');
-                }
-                if (myData.balance < price) {
-                    return alert('Saldo insuficiente para comprar esta posse!');
-                }
-
-                // Deduct Purchase Price to the Bank (🏦 Banco)
-                myData.balance -= price;
-                
-                if (!myData.properties) myData.properties = [];
-                myData.properties.push({ name, price, rent });
-
-                const tx = {
-                    fromId: state.playerId,
-                    toId: 'BANK',
-                    from: state.playerName,
-                    to: '🏦 Banco',
-                    amount: price,
-                    note: 'Compra de Imóvel: ' + name
-                };
-                state.transactions.push(tx);
-
-                playSound();
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'TRANSFER', tx: tx });
-            } else {
-                // Edit Existing Property
-                if (!name || isNaN(rent) || rent <= 0) {
-                    return alert('Por favor informe o Nome e o Valor do Aluguel!');
-                }
-                myData.properties[editIdx].name = name;
-                myData.properties[editIdx].rent = rent;
-
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'UPDATE_PROPERTIES', playerId: state.playerId, properties: myData.properties });
-            }
-
+            const price = Number(document.getElementById('prop-price-input').value);
+            const rent = Number(document.getElementById('prop-rent-input').value);
+            const index = Number(document.getElementById('prop-edit-index').value);
+            const me = state.players[state.playerId];
+            if (!me) return;
+            if (!name || !Number.isSafeInteger(rent) || rent <= 0) return alert('Informe o nome e um aluguel válido!');
+            if (index < 0) {
+                if (!Number.isSafeInteger(price) || price <= 0) return alert('Informe um preço válido!');
+                if (me.balance < price) return alert('Saldo insuficiente para comprar esta posse!');
+                sendToHost({ type: 'BUY_PROPERTY', property: { name, rent }, tx: {
+                    fromId: state.playerId, toId: 'BANK', amount: price, note: 'Compra de Imóvel: ' + name
+                }});
+            } else sendToHost({ type: 'EDIT_PROPERTY', index, name, rent });
+            playSound();
             closePropertyModal();
-            updateUI();
         }
 
         function editProperty(idx) {
             openPropertyModal(idx);
         }
 
-        function deleteProperty(idx) {
-            if (confirm('Deseja excluir esta posse?')) {
-                state.players[state.playerId].properties.splice(idx, 1);
-                updateUI();
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'UPDATE_PROPERTIES', playerId: state.playerId, properties: state.players[state.playerId].properties });
-            }
+        function deleteProperty(index) {
+            if (confirm('Deseja excluir esta posse?')) sendToHost({ type: 'DELETE_PROPERTY', index });
         }
 
         function passGO() {
             if (!state.players[state.playerId]) return;
-            state.players[state.playerId].balance += 2000;
-            const tx = {
-                from: '🏦 Banco',
-                to: state.playerName,
-                amount: 2000,
-                note: 'Passou no Ponto de Partida'
-            };
-            state.transactions.push(tx);
+            sendToHost({ type: 'TRANSFER', tx: { fromId: 'BANK', toId: state.playerId,
+                amount: 2000, note: 'Passou no Ponto de Partida' } });
             playSound();
-            updateUI();
-            if (state.isBanker) broadcastState();
-            else sendToHost({ type: 'TRANSFER', tx: tx });
         }
 
         let currentModalMode = '';
@@ -712,84 +849,43 @@
         }
 
         function confirmTransfer() {
-            const amount = parseInt(document.getElementById('modal-amount').value);
+            const amount = Number(document.getElementById('modal-amount').value);
             const note = document.getElementById('modal-note').value.trim();
-            if (!amount || amount <= 0) return alert('Informe um valor válido!');
-
-            const myData = state.players[state.playerId];
-            if (!myData) return;
-
+            const me = state.players[state.playerId];
+            if (!me) return;
+            if (!Number.isSafeInteger(amount) || amount <= 0) return alert('Informe um valor válido!');
+            let fromId = state.playerId, toId = 'BANK';
             if (currentModalMode === 'PAY_PLAYER') {
-                const select = document.getElementById('modal-recipient');
-                const targetId = select.value;
-                if (!targetId || !state.players[targetId]) return alert('Selecione um jogador válido na mesa!');
-                if (myData.balance < amount) return alert('Saldo insuficiente!');
-
-                myData.balance -= amount;
-                state.players[targetId].balance += amount;
-
-                const tx = {
-                    fromId: state.playerId,
-                    toId: targetId,
-                    from: state.playerName,
-                    to: state.players[targetId].name,
-                    amount: amount,
-                    note: note
-                };
-
-                state.transactions.push(tx);
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'TRANSFER', tx: tx });
-            } else if (currentModalMode === 'PAY_BANK') {
-                if (myData.balance < amount) return alert('Saldo insuficiente!');
-                myData.balance -= amount;
-                const tx = {
-                    fromId: state.playerId,
-                    toId: 'BANK',
-                    from: state.playerName,
-                    to: '🏦 Banco',
-                    amount: amount,
-                    note: note || 'Pagamento ao Banco'
-                };
-                state.transactions.push(tx);
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'TRANSFER', tx: tx });
+                toId = document.getElementById('modal-recipient').value;
+                if (!state.players[toId] || toId === state.playerId) return alert('Selecione um jogador válido!');
             } else if (currentModalMode === 'RECEIVE_BANK') {
-                myData.balance += amount;
-                const tx = {
-                    fromId: 'BANK',
-                    toId: state.playerId,
-                    from: '🏦 Banco',
-                    to: state.playerName,
-                    amount: amount,
-                    note: note || 'Recebido do Banco'
-                };
-                state.transactions.push(tx);
-                if (state.isBanker) broadcastState();
-                else sendToHost({ type: 'TRANSFER', tx: tx });
+                fromId = 'BANK';
+                toId = state.playerId;
             }
-
+            if (fromId !== 'BANK' && me.balance < amount) return alert('Saldo insuficiente!');
+            sendToHost({ type: 'TRANSFER', tx: { fromId, toId, amount, note } });
             playSound();
             closeModal();
-            updateUI();
         }
 
         function leaveRoom() {
-            if (confirm('Deseja sair da mesa atual?')) {
-                clearSession();
-                location.reload();
-            }
+            if (!confirm('Deseja sair da mesa atual?')) return;
+            if (state.isBanker) return finishRoom();
+            sendToHost({ type: 'LEAVE' });
+            resetRoom();
         }
 
         function endGame() {
-            if (confirm('Tem certeza que deseja FINALIZAR A PARTIDA para todos?')) {
-                clearSession();
-                if (state.isBanker) {
-                    broadcastState();
-                }
-                location.reload();
-            }
+            if (state.isBanker && confirm('Tem certeza que deseja FINALIZAR A PARTIDA para todos?')) finishRoom();
         }
+
+        function finishRoom() {
+            const msg = { type: 'END', pin: state.pin, sender: clientId };
+            channel.postMessage(msg);
+            connections.forEach(c => { if (c.open) c.send(msg); });
+            resetRoom();
+        }
+
     </script>
 </body>
 </html>

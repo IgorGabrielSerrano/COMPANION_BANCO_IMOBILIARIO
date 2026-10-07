@@ -1,0 +1,10 @@
+jogadores ao sair clicar no botao sair da mesa nao estao saindo para os demais jogadores
+
+somente o banqueiro esta podendo adquirir posses os demais jogadores efetuam o pagamento porem nao aparece a posse deles
+
+os jogadores ao clicar no botao "ponto de partida" nao estao recebendo os 2k o banqueiro recebe
+
+implementação nova: opção de cadeia: o jogador selecionara a opção cadeia no botao dai vai mostrar para os outros jogadores que ele esta preso e a contagem de redodas até 3 para que ele possa sair da prisão ou se ele tirar dados iguais dai ele marca dados iguais e pode sair se nao ele marca mais 1 rodada dai vai ser atualizado para todos exemplo preso a: 1/3 proxima rodada que o jogador marcar 2/3 até o 3/3 e dai quando ele sair zera e volta a ficar 0/3 no nome do jogador 
+
+ 
+
