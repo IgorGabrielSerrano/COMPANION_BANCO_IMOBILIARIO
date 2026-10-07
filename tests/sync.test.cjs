@@ -9,13 +9,18 @@ const peers = [];
 const queue = [];
 function page() {
     const elements = new Map();
+    let now = 0, nextFrame = 0;
+    const frames = new Map();
     const element = () => ({ value: '', innerHTML: '', style: {}, children: [], classList: {
         add() {}, remove() {}, toggle() {}, contains() { return true; }
-    }, appendChild() {} });
+    }, appendChild() {}, setAttribute() {} });
     const context = vm.createContext({
         crypto: { randomUUID }, console, setTimeout: fn => fn(),
+        performance: { now: () => now },
+        requestAnimationFrame: callback => { frames.set(++nextFrame, callback); return nextFrame; },
+        cancelAnimationFrame: id => frames.delete(id),
         window: { addEventListener() {} },
-        localStorage: { setItem() {}, removeItem() {} },
+        localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
         alert: msg => { throw new Error(msg); }, confirm: () => true,
         document: { getElementById(id) {
             if (!elements.has(id)) elements.set(id, element());
@@ -29,7 +34,13 @@ function page() {
         }
     });
     vm.runInContext(source, context);
-    return { run: code => vm.runInContext(code, context), elements };
+    return { run: code => vm.runInContext(code, context), elements,
+        step(ms) {
+            now += ms;
+            const pending = [...frames.values()];
+            frames.clear();
+            pending.forEach(callback => callback(now));
+        } };
 }
 function flush() { while (queue.length) queue.shift()(); }
 const host = page(), alice = page(), bob = page();
@@ -81,3 +92,53 @@ assert.equal(bob.run("'alice' in state.players"), false);
 host.run('endGame()'); flush();
 assert.equal(bob.run('state.pin'), '');
 console.log('OK: compra, bônus, pagamento, deduplicação, cadeia, saída e encerramento em três sessões.');
+
+const animated = page();
+animated.run('animateBalance(10000, true); animateBalance(12000);');
+assert.equal(animated.elements.get('balance-amount').innerText, 'R$ 10.000');
+animated.step(250);
+const intermediate = animated.run('displayedBalance');
+assert.ok(intermediate > 10000 && intermediate < 12000);
+// Duplicate synchronization must not jump to the target or restart the counter.
+animated.run('state.players.test = { balance: 12000, properties: [] }; state.playerId = "test"; previousVisualState = { balance: 12000, properties: "[]", jail: "false:0", transactions: 0 }; updateUI();');
+assert.equal(animated.run('displayedBalance'), intermediate);
+animated.step(100);
+assert.ok(animated.run('displayedBalance') > intermediate);
+// A second payment retargets from the currently visible amount.
+animated.run('animateBalance(14000);');
+animated.step(2000);
+assert.equal(animated.elements.get('balance-amount').innerText, 'R$ 14.000');
+animated.run('animateBalance(9000);');
+animated.step(200);
+assert.ok(animated.run('displayedBalance') < 14000 && animated.run('displayedBalance') > 9000);
+animated.step(2000);
+assert.equal(animated.run('displayedBalance'), 9000);
+animated.run('window.matchMedia = () => ({ matches: true }); animateBalance(11000);');
+assert.equal(animated.run('displayedBalance'), 11000);
+animated.run('window.matchMedia = () => ({ matches: false }); animateBalance(13000); resetRoom();');
+animated.step(2000);
+assert.equal(animated.run('displayedBalance'), null);
+console.log('OK: contagem progressiva, novo pagamento durante animação, redução, movimento reduzido e cancelamento ao sair.');
+
+animated.run(`
+    let contextsCreated = 0, tonesStarted = 0;
+    window.AudioContext = class {
+        constructor() { contextsCreated++; this.state = 'running'; this.currentTime = 0; }
+        createOscillator() { return { frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+            connect() {}, disconnect() {}, start() { tonesStarted++; }, stop() {} }; }
+        createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} },
+            connect() {}, disconnect() {} }; }
+    };
+    unlockMoneyAudio(); unlockMoneyAudio(); animateBalance(10000, true); animateBalance(12000);
+`);
+animated.step(100);
+assert.equal(animated.run('contextsCreated'), 1);
+assert.equal(animated.run('tonesStarted'), 1);
+animated.step(2000);
+assert.equal(animated.run('tonesStarted'), 5); // Coin tick + four-note finale.
+animated.run('toggleMoneySound(); animateBalance(14000);');
+animated.step(100);
+animated.step(2000);
+assert.equal(animated.run('tonesStarted'), 5);
+assert.equal(animated.run('displayedBalance'), 14000);
+console.log('OK: áudio compartilhado, moedas, toque final e botão para silenciar.');
