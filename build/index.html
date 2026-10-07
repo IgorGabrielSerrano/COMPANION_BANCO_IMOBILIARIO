@@ -144,7 +144,12 @@
 
             <div class="card">
                 <div id="jail-status" aria-live="polite" style="margin-bottom:8px;">🔓 Livre: 0/3</div>
-                <button id="btn-jail-enter" onclick="jailAction('ENTER')">🔒 Ir para a cadeia</button>
+                <div id="free-jail-actions" class="grid-2">
+                    <button id="btn-jail-enter" onclick="jailAction('ENTER')">🔒 Ir para a cadeia</button>
+                    <button onclick="jailAction('MARK_DOUBLES')">🎲 Marcar dados iguais</button>
+                    <div id="doubles-status" aria-live="polite" style="grid-column:span 2;">Duplas consecutivas: 0/3</div>
+                    <button class="btn-small" style="grid-column:span 2;" onclick="jailAction('END_TURN')">Encerrar turno / zerar duplas</button>
+                </div>
                 <div id="jail-actions" class="grid-2 hidden">
                     <button onclick="jailAction('ROUND')">⏳ Mais 1 rodada</button>
                     <button class="btn-green" onclick="jailAction('DOUBLES')">🎲 Tirei dados iguais</button>
@@ -342,6 +347,31 @@
         }
 
         let moneyAudio = null;
+        const moneyBuffers = {};
+        const activeMoneySounds = new Set();
+        let moneySoundsLoading = null;
+        const MONEY_SOUND_FILES = {
+            tickA: 'assets/audio/coin-tick-a.wav', tickB: 'assets/audio/coin-tick-b.wav',
+            finish: 'assets/audio/coin-jingle.wav', spend: 'assets/audio/coin-drop.wav'
+        };
+
+        function loadMoneySounds() {
+            if (!moneyAudio || moneySoundsLoading) return moneySoundsLoading;
+            moneySoundsLoading = Promise.all(Object.entries(MONEY_SOUND_FILES).map(async ([name, url]) => {
+                if (moneyBuffers[name]) return;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Audio unavailable');
+                moneyBuffers[name] = await moneyAudio.decodeAudioData(await response.arrayBuffer());
+            })).catch(() => { moneySoundsLoading = null; });
+            return moneySoundsLoading;
+        }
+
+        function stopMoneySounds() {
+            for (const source of activeMoneySounds) {
+                try { source.stop(); } catch (_) {}
+            }
+            activeMoneySounds.clear();
+        }
         let soundEnabled = localStorage.getItem('companion_sound') !== 'off';
         let balanceFrame = null;
         let displayedBalance = null;
@@ -353,6 +383,7 @@
                 if (!Audio || !soundEnabled) return;
                 moneyAudio ||= new Audio();
                 if (moneyAudio.state === 'suspended') moneyAudio.resume().catch(() => {});
+                loadMoneySounds();
             } catch (_) {}
         }
 
@@ -365,6 +396,7 @@
             localStorage.setItem('companion_sound', soundEnabled ? 'on' : 'off');
             updateSoundButton();
             if (soundEnabled) unlockMoneyAudio();
+            else stopMoneySounds();
         }
 
         function updateSoundButton() {
@@ -373,29 +405,29 @@
             button.setAttribute('aria-pressed', String(soundEnabled));
         }
 
-        function playCoinTone(frequency, delay = 0, duration = 0.08, volume = 0.045) {
-            if (!soundEnabled || !moneyAudio || moneyAudio.state !== 'running') return;
+        function playMoneySample(name, volume = 0.3, rate = 1) {
+            if (!soundEnabled || !moneyAudio || moneyAudio.state !== 'running' || !moneyBuffers[name]) return;
             try {
-                const start = moneyAudio.currentTime + delay;
-                const oscillator = moneyAudio.createOscillator();
+                const source = moneyAudio.createBufferSource();
                 const gain = moneyAudio.createGain();
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(frequency, start);
-                oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.35, start + duration);
-                gain.gain.setValueAtTime(0.001, start);
-                gain.gain.linearRampToValueAtTime(volume, start + 0.008);
-                gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-                oscillator.connect(gain);
+                source.buffer = moneyBuffers[name];
+                source.playbackRate.value = rate;
+                gain.gain.value = volume;
+                source.connect(gain);
                 gain.connect(moneyAudio.destination);
-                oscillator.start(start);
-                oscillator.stop(start + duration);
-                oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+                activeMoneySounds.add(source);
+                source.onended = () => {
+                    activeMoneySounds.delete(source);
+                    source.disconnect();
+                    gain.disconnect();
+                };
+                source.start();
             } catch (_) {}
         }
 
         function playMoneyFinish(increasing) {
-            const notes = increasing ? [1046.5, 1318.5, 1568, 2093] : [784, 587.3];
-            notes.forEach((frequency, index) => playCoinTone(frequency, index * 0.065, 0.16));
+            stopMoneySounds();
+            playMoneySample(increasing ? 'finish' : 'spend', increasing ? 0.38 : 0.28);
         }
 
         function reducedMotion() {
@@ -410,6 +442,7 @@
 
         function animateBalance(target, immediate = false) {
             stopBalanceAnimation();
+            stopMoneySounds();
             const label = document.getElementById('balance-amount');
             const increasing = displayedBalance !== null && target > displayedBalance;
             if (immediate || displayedBalance === null || reducedMotion()) {
@@ -433,8 +466,8 @@
                 displayedBalance = Math.round(from + (target - from) * eased);
                 label.innerText = formatMoney(displayedBalance);
                 if (progress < 1) {
-                    if (now - lastCoin >= 85) {
-                        playCoinTone((increasing ? 1100 : 750) + (coinIndex++ % 4) * 120);
+                    if (now - lastCoin >= 160) {
+                        playMoneySample(coinIndex++ % 2 ? 'tickB' : 'tickA', increasing ? 0.22 : 0.16, 0.96 + (coinIndex % 3) * 0.04);
                         lastCoin = now;
                     }
                     balanceFrame = requestAnimationFrame(frame);
@@ -677,6 +710,16 @@
                 if (data.action === 'ENTER' && !actor.jailed) {
                     actor.jailed = true;
                     actor.jailRounds = 0;
+                    actor.consecutiveDoubles = 0;
+                } else if (data.action === 'MARK_DOUBLES' && !actor.jailed) {
+                    actor.consecutiveDoubles = (actor.consecutiveDoubles || 0) + 1;
+                    if (actor.consecutiveDoubles >= 3) {
+                        actor.jailed = true;
+                        actor.jailRounds = 0;
+                        actor.consecutiveDoubles = 0;
+                    }
+                } else if (data.action === 'END_TURN' && !actor.jailed) {
+                    actor.consecutiveDoubles = 0;
                 } else if (data.action === 'DOUBLES' && actor.jailed) {
                     actor.jailed = false;
                     actor.jailRounds = 0;
@@ -710,6 +753,7 @@
             previousVisualState = null;
             stopBalanceAnimation();
             displayedBalance = null;
+            stopMoneySounds();
             document.querySelectorAll('.modal').forEach(modal => modal.classList.add('hidden'));
             document.getElementById('screen-player').classList.add('hidden');
             document.getElementById('screen-lobby').classList.remove('hidden');
@@ -722,7 +766,7 @@
             const visualState = {
                 balance: myData.balance,
                 properties: JSON.stringify(myData.properties || []),
-                jail: `${!!myData.jailed}:${myData.jailRounds || 0}`,
+                jail: `${!!myData.jailed}:${myData.jailRounds || 0}:${myData.consecutiveDoubles || 0}`,
                 transactions: state.transactions.length
             };
             const previous = previousVisualState;
@@ -732,7 +776,8 @@
             }
             
             document.getElementById('jail-status').innerText = myData.jailed ? `🔒 Preso: ${myData.jailRounds || 0}/3` : '🔓 Livre: 0/3';
-            document.getElementById('btn-jail-enter').classList.toggle('hidden', !!myData.jailed);
+            document.getElementById('free-jail-actions').classList.toggle('hidden', !!myData.jailed);
+            document.getElementById('doubles-status').innerText = `Duplas consecutivas: ${myData.consecutiveDoubles || 0}/3`;
             document.getElementById('jail-actions').classList.toggle('hidden', !myData.jailed);
 
             // Render My Properties Chips
@@ -776,7 +821,7 @@
 
                 row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; width:100%;">
-                        <span><b>${escapeHtml(p.name)}</b> ${pId === state.playerId ? ' (Você)' : ''}<br><small>${p.jailed ? '🔒 Preso: ' + (p.jailRounds || 0) + '/3' : '🔓 Livre: 0/3'}</small></span>
+                        <span><b>${escapeHtml(p.name)}</b> ${pId === state.playerId ? ' (Você)' : ''}<br><small>${p.jailed ? '🔒 Preso: ' + (p.jailRounds || 0) + '/3' : '🔓 Livre: 0/3 · Duplas: ' + (p.consecutiveDoubles || 0) + '/3'}</small></span>
                         <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
                     </div>
                     ${propsHtml}

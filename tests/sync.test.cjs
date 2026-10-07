@@ -84,6 +84,24 @@ alice.run(`jailAction('ROUND');`); flush();
 alice.run(`jailAction('DOUBLES');`); flush();
 assert.equal(bob.run('state.players.alice.jailed'), false);
 assert.equal(bob.run('state.players.alice.jailRounds'), 0);
+alice.run(`jailAction('MARK_DOUBLES')`); flush();
+alice.run(`jailAction('MARK_DOUBLES')`); flush();
+assert.equal(bob.run('state.players.alice.consecutiveDoubles'), 2);
+alice.run(`jailAction('END_TURN')`); flush();
+assert.equal(bob.run('state.players.alice.consecutiveDoubles'), 0);
+for (let count = 1; count <= 3; count++) {
+    alice.run(`jailAction('MARK_DOUBLES')`); flush();
+    for (const app of [host, alice, bob]) {
+        assert.equal(app.run('state.players.alice.consecutiveDoubles'), count === 3 ? 0 : count);
+        assert.equal(app.run('state.players.alice.jailed'), count === 3);
+        assert.equal(app.run('state.players.alice.jailRounds'), 0);
+    }
+}
+alice.run(`jailAction('MARK_DOUBLES')`); flush();
+assert.equal(bob.run('state.players.alice.consecutiveDoubles'), 0);
+alice.run(`jailAction('DOUBLES')`); flush();
+assert.equal(bob.run('state.players.alice.jailed'), false);
+console.log('OK: sequência de duplas, encerramento de turno, prisão na terceira dupla e saída.');
 alice.run(`sendToHost({ type: 'TRANSFER', tx: { fromId: 'alice', toId: 'missing', amount: 1000 } });`); flush();
 assert.equal(host.run('state.players.alice.balance'), 10000);
 alice.run(`openPropertyModal(0); document.getElementById('prop-color-input').value = '#ed7272'; saveProperty();`); flush();
@@ -149,24 +167,53 @@ assert.equal(animated.run('displayedBalance'), null);
 console.log('OK: contagem progressiva, novo pagamento durante animação, redução, movimento reduzido e cancelamento ao sair.');
 
 animated.run(`
-    let contextsCreated = 0, tonesStarted = 0;
+    let contextsCreated = 0, samplesStarted = 0;
     window.AudioContext = class {
         constructor() { contextsCreated++; this.state = 'running'; this.currentTime = 0; }
-        createOscillator() { return { frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
-            connect() {}, disconnect() {}, start() { tonesStarted++; }, stop() {} }; }
-        createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} },
+        createBufferSource() { return { playbackRate: { value: 1 },
+            connect() {}, disconnect() {}, start() { samplesStarted++; }, stop() { this.onended?.(); } }; }
+        createGain() { return { gain: { value: 1 },
             connect() {}, disconnect() {} }; }
     };
+    Object.keys(MONEY_SOUND_FILES).forEach(name => moneyBuffers[name] = { name });
     unlockMoneyAudio(); unlockMoneyAudio(); animateBalance(10000, true); animateBalance(12000);
 `);
 animated.step(100);
 assert.equal(animated.run('contextsCreated'), 1);
-assert.equal(animated.run('tonesStarted'), 1);
+assert.equal(animated.run('samplesStarted'), 1);
 animated.step(2000);
-assert.equal(animated.run('tonesStarted'), 5); // Coin tick + four-note finale.
+assert.equal(animated.run('samplesStarted'), 2); // Recorded coin tick + recorded jingle.
 animated.run('toggleMoneySound(); animateBalance(14000);');
 animated.step(100);
 animated.step(2000);
-assert.equal(animated.run('tonesStarted'), 5);
+assert.equal(animated.run('samplesStarted'), 2);
+assert.equal(animated.run('activeMoneySounds.size'), 0);
 assert.equal(animated.run('displayedBalance'), 14000);
 console.log('OK: áudio compartilhado, moedas, toque final e botão para silenciar.');
+
+(async () => {
+    const loading = page();
+    loading.run(`
+        let downloads = 0, decodes = 0;
+        window.AudioContext = class {
+            constructor() { this.state = 'running'; }
+            async decodeAudioData(bytes) { decodes++; return { decoded: true }; }
+        };
+        fetch = async () => { downloads++; return { ok: true, arrayBuffer: async () => new ArrayBuffer(8) }; };
+        unlockMoneyAudio(); unlockMoneyAudio();
+    `);
+    await loading.run('moneySoundsLoading');
+    assert.equal(loading.run('downloads'), 4);
+    assert.equal(loading.run('decodes'), 4);
+    assert.equal(loading.run('Object.keys(moneyBuffers).length'), 4);
+    for (const name of loading.run('Object.values(MONEY_SOUND_FILES)')) {
+        const bytes = readFileSync(require('node:path').join(__dirname, '../build', name));
+        assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+        assert.equal(bytes.toString('ascii', 8, 12), 'WAVE');
+        assert.ok(bytes.length > 1000);
+    }
+    loading.run(`moneySoundsLoading = null; delete moneyBuffers.tickA; fetch = async () => ({ ok: false }); loadMoneySounds();`);
+    await loading.run('moneySoundsLoading');
+    assert.equal(loading.run('moneySoundsLoading'), null);
+    console.log('OK: arquivos WAV locais, carregamento único, decodificação e falha de download sem travar o jogo.');
+})().catch(error => { console.error(error); process.exitCode = 1; });
