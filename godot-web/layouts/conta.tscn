@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b4syjvmicapbr"]
 
-[ext_resource type="Theme" path="res://layouts/preview_theme.tres" id="1"]
+[ext_resource type="Theme" uid="uid://xe4e62quea8c" path="res://layouts/preview_theme.tres" id="1"]
 [ext_resource type="Script" uid="uid://dhjx4y5tmnj57" path="res://ui/icon.gd" id="2"]
 
 [node name="Conta" type="Control" unique_id=1648434586]
@@ -41,7 +41,6 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 20.0
-offset_right = 0.0
 offset_bottom = 132.0
 grow_horizontal = 2
 metadata/tone = "card"
@@ -51,10 +50,10 @@ metadata/gradient_eligible = true
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 9.0
-offset_top = 5.0
-offset_right = -45.0
-offset_bottom = 25.0
+offset_left = 7.0
+offset_top = 6.0
+offset_right = -47.0
+offset_bottom = 26.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 12
 text = "Saldo disponível"
@@ -65,9 +64,9 @@ metadata/bold = false
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 3.0
+offset_left = 7.0
 offset_top = 21.0
-offset_right = -3.0
+offset_right = 1.0
 offset_bottom = 65.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 32
@@ -175,7 +174,6 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 455.0
-offset_right = 0.0
 offset_bottom = 485.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 15
@@ -183,9 +181,9 @@ text = "Últimas movimentações"
 metadata/tone = "text"
 metadata/bold = true
 
-[node name="JogadoresSala" type="Panel" parent="."]
-layout_mode=0
-anchor_right=1.0
-offset_top=187.0
-offset_bottom=329.0
-metadata/tone="surface"
+[node name="JogadoresSala" type="Panel" parent="." unique_id=1125397658]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 187.0
+offset_bottom = 329.0
+metadata/tone = "surface"
