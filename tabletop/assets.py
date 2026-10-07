@@ -55,7 +55,7 @@ def generate(out,base,spaces,colors,obj):
     for i,n in enumerate(news):
         key=2+i//50; cardId=key*100+i%50
         card=obj('Card',n['guid'],0,0,0,nick=n['title'])
-        card.update(CardID=cardId,Hands=True,GMNotes=f"companion_news:{n['id']}",Description=n['text']+'\n'+('Receba ' if n['amount']>0 else 'Pague ')+str(abs(n['amount']))+' no Companion. Carta original, não oficial.',CustomDeck={str(key):definitions[str(key)]},LuaScript='function onLoad() self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador",function(color) local recipient=Global.call("titleRecipient",{color=color}) if recipient then Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient}) end end) end')
+        card.update(CardID=cardId,Hands=False,GMNotes=f"companion_news:{n['id']}",Description=n['text']+'\n'+('Receba ' if n['amount']>0 else 'Pague ')+str(abs(n['amount']))+' no Companion. Carta original, não oficial.',CustomDeck={str(key):definitions[str(key)]},LuaScript='function onLoad() self.use_hands=false; self.use_snap_points=false; self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador",function(color) local recipient=Global.call("titleRecipient",{color=color}) if recipient then Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient}) end end) end')
         newsCards.append(card)
     deck=obj('DeckCustom','ee0001',-8,1.7,3,nick='Notícias — 100 cartas originais')
     deck['Transform']['rotZ']=180
@@ -74,7 +74,7 @@ def generate(out,base,spaces,colors,obj):
         wrapped(d,'Guarde na sua mão após registrar a compra no Companion.',498,19)
         titleFaces.append(im)
         card=obj('Card',f'ff{s["numero"]:04}',0,0,0,nick=s['nome'])
-        card.update(Hands=True,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador (host: jogador da vez)", function(color) local index=tonumber(self.getGMNotes():match("companion_title:(%d+)")) local recipient=Global.call("registerTitleOwner",{color=color,property=index}) if recipient then self.setDescription(Global.call("titleDescription",{property=index})); Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient,property=index}) else printToColor("Confira o dono ou inicie a mesa.",color) end end) end')
+        card.update(Hands=False,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.use_hands=false; self.use_snap_points=false; self.addContextMenuItem("Visualizar carta",function(color) Global.call("presentCard",{guid=self.getGUID(),color=color}) end); self.addContextMenuItem("Enviar para área do jogador (host: jogador da vez)", function(color) local index=tonumber(self.getGMNotes():match("companion_title:(%d+)")) local recipient=Global.call("registerTitleOwner",{color=color,property=index}) if recipient then self.setDescription(Global.call("titleDescription",{property=index})); Global.call("moveTitleToArea",{guid=self.getGUID(),color=recipient,property=index}) else printToColor("Confira o dono ou inicie a mesa.",color) end end) end')
         titleCards.append(card)
     sheet=Image.new('RGB',(4000,1800),'#f2f6f8')
     for i,im in enumerate(titleFaces): sheet.paste(im,((i%10)*400,(i//10)*600))
@@ -82,7 +82,7 @@ def generate(out,base,spaces,colors,obj):
     titleDef={'1':dict(FaceURL=asset(sheet,'titulos-frente'),BackURL=titleback,NumWidth=10,NumHeight=3,BackIsHidden=False,UniqueBack=False)}
     for card in titleCards: card['CustomDeck']=titleDef
     titleDeck=obj('DeckCustom','ee0002',8,1.7,3,nick=f'Títulos de posse — {len(titleCards)} cartas')
-    titleDeck.update(DeckIDs=[c['CardID'] for c in titleCards],ContainedObjects=titleCards,CustomDeck=titleDef,Description='Botão direito → Search: escolha pelo nome. Retire o título e guarde na mão da sua cor após registrar a compra no Companion.')
+    titleDeck.update(DeckIDs=[c['CardID'] for c in titleCards],ContainedObjects=titleCards,CustomDeck=titleDef,Description='Botão direito → Search: escolha pelo nome. Retire o título e envie para a área de posses do jogador após registrar a compra no Companion.')
     (out/'noticias.json').write_text(json.dumps(news,ensure_ascii=False,indent=2),encoding='utf-8'); files.append('noticias.json')
     # Amostra para revisão visual, sem precisar abrir uma folha de atlas inteira.
     preview=Image.new('RGB',(1200,600),'white')

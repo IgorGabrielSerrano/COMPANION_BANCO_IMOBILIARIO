@@ -127,17 +127,41 @@ local function refreshAreas()
         end
     end
 end
-local function areaTarget(color,index)
-    local count=0
-    for key,owner in pairs(owners) do if owner==color and key~=tostring(index) then count=count+1 end end
+local function areaTarget(color,index,guid,preferred)
     local area=getObjectFromGUID(AREAS[color].guid)
     local p=area and area.getPosition() or AREAS[color]
-    return {x=p.x+(count%3-1)*2.7,y=2+math.floor(count/6)*.08,z=p.z+.7-math.floor((count%6)/3)*3.3}
+    local occupied={0,0,0,0,0,0}
+    for _,other in ipairs(getAllObjects()) do
+        local notes=other.getGMNotes()
+        if other.getGUID()~=guid and (notes:match('^companion_title:') or notes:match('^companion_news:%d')) then
+            local q=other.getPosition()
+            if math.abs(q.x-p.x)<=4.5 and math.abs(q.z-p.z)<=4.1 then
+                local nearest,distance=1,math.huge
+                for slot=1,6 do
+                    local x=p.x+((slot-1)%3-1)*2.7
+                    local z=p.z+.7-math.floor((slot-1)/3)*3.3
+                    local d=(q.x-x)^2+(q.z-z)^2
+                    if d<distance then nearest,distance=slot,d end
+                end
+                occupied[nearest]=occupied[nearest]+1
+            end
+        end
+    end
+    local slot,best=1,math.huge
+    for i=1,6 do
+        local x=p.x+((i-1)%3-1)*2.7
+        local z=p.z+.7-math.floor((i-1)/3)*3.3
+        local score=occupied[i]*10000+(preferred and ((preferred.x-x)^2+(preferred.z-z)^2) or i)
+        if score<best then slot,best=i,score end
+    end
+    return {x=p.x+((slot-1)%3-1)*2.7,y=(p.y or 1)+.3+occupied[slot]*.08,z=p.z+.7-math.floor((slot-1)/3)*3.3}
 end
 function moveTitleToArea(args)
     local card=getObjectFromGUID(args.guid)
     if not card or not canReceiveTitle({color=args.color}) then return false end
-    local p=areaTarget(args.color,args.property)
+    local p=areaTarget(args.color,args.property,args.guid,args.preferred)
+    card.use_hands=false
+    card.use_snap_points=false
     card.setPositionSmooth({p.x,p.y,p.z},false,false)
     card.setRotation({0,180,0})
     return true
@@ -305,7 +329,7 @@ function presentCard(args)
     if not card then return false end
     local p=card.getPosition()
     local rotation=card.getRotation()
-    Player[args.color].lookAt({position={x=p.x,y=p.y or 2,z=p.z},pitch=80,yaw=rotation.y or 180,distance=7})
+    Player[args.color].lookAt({position={x=p.x,y=p.y or 2,z=p.z},pitch=80,yaw=((rotation.y or 180)+180)%360,distance=7})
     presenting[args.color]=true
     renderUI()
     return true
@@ -327,6 +351,12 @@ function onLoad(saved)
     local board = getObjectFromGUID('bb0001')
     if not board then return end
     refreshAreas()
+    for _,object in ipairs(getAllObjects()) do
+        if object.getGMNotes():match('^companion_title:') or object.getGMNotes():match('^companion_news:%d') then
+            object.use_hands=false
+            object.use_snap_points=false
+        end
+    end
     renderUI()
     broadcastToAll('Companion: escolha a cor do seu peao. Pagamentos, duplas e prisao sao registrados no aplicativo.',{0.6,0.85,1})
 end
@@ -437,11 +467,13 @@ function buyProperty(player)
     purchaseSerial=purchaseSerial+1
     local serial=purchaseSerial
     renderUI()
-    local target=areaTarget(color,index)
+    local target=areaTarget(color,index,string.format('ff%04d',index))
     local function receive(card)
         if serial~=purchaseSerial then return end
         owners[tostring(index)]=color
         purchaseBusy=false
+        card.use_hands=false
+        card.use_snap_points=false
         card.setDescription('Dono: '..label(color)..'\nCompra: R$ '..space.price..'\nRegistre posse e pagamento no Companion. Aluguéis: a definir.')
         broadcastToAll(label(color)..' comprou '..space.name..' por R$ '..space.price..'. Registre no Companion.',{0.5,1,0.7})
         renderUI()
@@ -477,17 +509,20 @@ function onObjectDrop(actor,object)
             return
         end
     end
-    if object.getGUID():match('^ff') then
+    if object.getGMNotes():match('^companion_title:') or object.getGMNotes():match('^companion_news:%d') then
         local index=tonumber(object.getGMNotes():match('^companion_title:(%d+)$'))
-        if index and config.started and Player[actor].host then
+        if config.started then
             local p=object.getPosition()
             for i=1,config.count do
                 local color=colors[i]
                 local mat=getObjectFromGUID(AREAS[color].guid)
                 local center=mat and mat.getPosition() or AREAS[color]
-                if math.abs(p.x-center.x)<=4.5 and math.abs(p.z-center.z)<=4.1 then
-                    owners[tostring(index)]=color
-                    object.setDescription(titleDescription({property=index}))
+                if math.abs(p.x-center.x)<=4.5 and math.abs(p.z-center.z)<=4.1 and (Player[actor].host or actor==color) then
+                    if index then
+                        owners[tostring(index)]=color
+                        object.setDescription(titleDescription({property=index}))
+                    end
+                    moveTitleToArea({guid=object.getGUID(),color=color,property=index,preferred=p})
                     break
                 end
             end

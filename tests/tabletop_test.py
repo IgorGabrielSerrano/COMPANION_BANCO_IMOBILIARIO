@@ -9,7 +9,8 @@ root=Path(__file__).resolve().parents[1]
 save=json.loads((root/'build/tabletop/Companion-Tabuleiro.json').read_text(encoding='utf-8'))
 ref=json.loads((root/'docs/tabuleiro-referencia.json').read_text(encoding='utf-8-sig'))
 assert len(ref['casas'])==len(save['SnapPoints'])==40
-assert len({o['GUID'] for o in save['ObjectStates']})==29
+assert len({o['GUID'] for o in save['ObjectStates']})==21
+assert not any(o['Name']=='HandTrigger' for o in save['ObjectStates'])
 assert len([o for o in save['ObjectStates'] if o['GUID'].startswith('ac')])==8
 all_cards=[c for o in save['ObjectStates'] for c in o.get('ContainedObjects',[])]
 assert len(all_cards)==128
@@ -17,7 +18,8 @@ assert len({c['GUID'] for c in all_cards})==128
 assert all(re.fullmatch('[a-f0-9]{6}',o['GUID']) for o in save['ObjectStates']+all_cards)
 assert len([c for c in all_cards if c['GMNotes'].startswith('companion_news:')])==100
 assert len([c for c in all_cards if c['GMNotes'].startswith('companion_title:')])==28
-assert save['Hands']['Enable']
+assert not save['Hands']['Enable']
+assert all(not c['Hands'] for c in all_cards)
 pawns=[o for o in save['ObjectStates'] if o['GUID'].startswith('aa')]
 assert len(pawns)==8 and all(o['Name']=='Custom_Model' for o in pawns)
 assert len({tuple(o['ColorDiffuse'].values()) for o in pawns})==8
@@ -272,7 +274,21 @@ assert(objects.ac0003.name=='Posses de Bia — Azul')
 assert(moveTitleToArea({guid='ff0002',color='Blue',property=2}))
 assert(math.abs(objects.ff0002.p.x-AREAS.Blue.x)<=4.5)
 assert(presentCard({guid='ff0002',color='White'}))
-assert(lastCamera.position.x==objects.ff0002.p.x and lastCamera.distance==7)
+assert(lastCamera.position.x==objects.ff0002.p.x and lastCamera.distance==7 and lastCamera.yaw==0)
+objects.ff0002.getRotation=function() return {y=90} end
+assert(presentCard({guid='ff0002',color='White'})) assert(lastCamera.yaw==270)
+-- Soltar perto de uma vaga encaixa a carta; outra carta usa uma vaga livre.
+local first=fake('ff0034',AREAS.Blue.x+2.4,AREAS.Blue.z-2.3)
+first.notes='companion_title:34'
+onObjectDrop('White',first)
+assert(first.moves==1 and first.p.x==AREAS.Blue.x+2.7 and math.abs(first.p.z-(AREAS.Blue.z-2.6))<.001)
+assert(first.use_hands==false and first.use_snap_points==false)
+local second=fake('cc0099',AREAS.Blue.x+2.4,AREAS.Blue.z-2.3)
+second.notes='companion_news:99'
+onObjectDrop('White',second)
+assert(second.moves==1 and (second.p.x~=first.p.x or second.p.z~=first.p.z))
+local outside=fake('cc0098',0,0) outside.notes='companion_news:98'
+onObjectDrop('White',outside) assert(outside.moves==0)
 topView(Player.White) assert(lastCamera.distance==48)
 -- Não deixa outro cliente alterar o layout do host.
 openLayout({host=false,color='Red'})
@@ -282,5 +298,5 @@ assert(string.find(lastXml,'anchorMin="0.16 0.91"',1,true))
 ''')
 ET.fromstring('<root>'+lua.globals().lastXml+'</root>')
 print('OK: save de 40 casas; rolagem, autorização, consumo único, movimento manual, volta, espera e timeout.')
-print('OK: 100 Notícias, 28 títulos, 8 mãos, configuração host, nomes, persistência, soma e aviso de duplas.')
+print('OK: 100 Notícias, 28 títulos, 8 áreas magnéticas, configuração host, nomes, persistência, soma e aviso de duplas.')
 print('OK: compra única, dono/preço, host, título final, persistência e layout ajustável.')
