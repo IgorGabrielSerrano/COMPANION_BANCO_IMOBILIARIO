@@ -61,6 +61,18 @@ def run(channel):
                 page.wait_for_timeout(220)
 
             page.screenshot(path=str(screenshots / "lobby.png"))
+            click_canvas("rules")
+            page.wait_for_selector("#modal-rules:not(.hidden)")
+            page.locator("#rules-search").fill("cadeia")
+            assert "Sair da prisão" in page.locator("#rules-results").inner_text()
+            page.locator("#rules-search").fill("PRISAO")
+            assert page.locator("#rules-results mark").count() > 0
+            page.locator("#rules-search").fill("hipoteca")
+            assert "#page=1" in page.locator("#rules-results a").first.get_attribute("href")
+            page.locator("#rules-search").fill("zzzinexistente")
+            assert "Nenhum tópico" in page.locator("#rules-results").inner_text()
+            page.keyboard.press("Escape")
+            page.wait_for_selector("#modal-rules.hidden", state="attached")
             page.evaluate("localStorage.setItem('companion_player_themes', JSON.stringify({igor:'c4'}))")
             for bank in ["c4", "intel", "new", "nexus", "mu"]:
                 click_canvas("settings")
@@ -163,6 +175,12 @@ def run(channel):
                 page.wait_for_function("id => companionLayout.theme === id", arg=bank)
                 page.locator("#modal-bank-settings .btn-blue").click()
                 assert page.evaluate("chosenBankTheme()") == bank
+                click_canvas("rules")
+                page.wait_for_selector("#modal-rules:not(.hidden)")
+                page.locator("#rules-search").fill("dados iguais")
+                assert "três seguidas" in page.locator("#rules-results").inner_text()
+                page.screenshot(path=str(screenshots / f"{bank}-rules.png"))
+                page.locator("#modal-rules .rules-heading button").click()
                 for tab in ["conta", "jogadores", "posses", "historico", "prisao", "pix"]:
                     select_tab(tab)
                     expected_nav_coin = "eac46b" if bank in ["c4", "intel"] else page.evaluate("BANK_THEMES[chosenBankTheme()].accent.slice(1)")

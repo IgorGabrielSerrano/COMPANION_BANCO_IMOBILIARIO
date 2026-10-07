@@ -103,3 +103,12 @@ properties can be selected to prefill rent; Pix payments retain property IDs
 and payment method in history. Camera tracks stop on close, successful scan,
 leaving the room or hiding the page. This is an in-game transfer, not a banking
 Pix integration. QR generation and decoding libraries are vendored with licenses.
+
+## Rules reference
+
+The persistent Rules header button opens a themed HTML guide in the lobby and
+every game tab. Search is accent-insensitive, supports topic synonyms and highlights
+matches. Short summaries refer to the official Estrela Super Banco Imobiliário
+manual, with a page link for the complete wording. This is a searchable guide,
+not a full-text search of the scanned PDF. Optional rules require table agreement;
+Pix and banker undo are companion features. Reading never changes room state.

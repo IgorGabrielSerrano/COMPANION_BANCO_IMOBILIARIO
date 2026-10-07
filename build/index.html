@@ -84,6 +84,17 @@
         .bank-theme-choice[aria-pressed="true"] { border-color:var(--choice-accent) !important; box-shadow:0 0 0 1px var(--choice-accent); }
         .bank-theme-dot { flex:0 0 28px; height:28px; border-radius:9px; }
         #bank-theme-choices { display:flex; flex-direction:column; gap:9px; }
+        #modal-rules .modal-content { max-width:480px; }
+        .rules-tools { position:sticky; top:-18px; background:var(--bank-surface,#1d1f22); padding:12px 0 8px; z-index:1; }
+        .rules-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .rules-heading h3 { margin:0; }
+        .rules-tools input { display:block; width:100%; box-sizing:border-box; }
+        #rules-count { display:block; margin-top:8px; color:var(--bank-muted); }
+        .rule-result { padding:12px; border:1px solid var(--bank-border,#33363c); border-radius:12px; margin-top:10px; }
+        .rule-result h4 { margin:0 0 6px; }
+        .rule-result p { margin:0 0 8px; line-height:1.5; font-size:0.9rem; }
+        .rule-result a, #rules-manual { color:var(--bank-accent,#dddfe3); font-size:0.8rem; }
+        .rule-result mark { background:var(--bank-soft,#292c31); color:var(--bank-text,#f8f8fa); font-weight:bold; }
         @keyframes enter-card {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -372,6 +383,20 @@
             <p id="pix-scan-status" style="color:var(--bank-muted);font-size:0.85rem"></p>
             <button onclick="closePixScanner()">Fechar câmera</button>
         </div></div>
+        <div id="modal-rules" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+            <div class="modal-content">
+                <div class="rules-tools">
+                    <div class="rules-heading"><h3 id="rules-title">Regras do jogo</h3><button onclick="closeRules()" aria-label="Fechar regras">Fechar</button></div>
+                    <label for="rules-search">O que você quer conferir?</label>
+                    <input id="rules-search" type="search" placeholder="Ex.: cadeia, dados iguais, aluguel" oninput="renderRules()" autocomplete="off">
+                    <small id="rules-count" role="status" aria-live="polite"></small>
+                </div>
+                <p style="font-size:0.8rem;color:var(--bank-muted)">Guia simplificado do Super Banco Imobiliário da Estrela. A busca consulta estes resumos; cada resultado abre a página do manual com a regra completa.</p>
+                <a id="rules-manual" href="https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf" target="_blank" rel="noopener noreferrer">Abrir manual oficial completo</a>
+                <div id="rules-results"></div>
+                <small style="color:var(--bank-muted)">Pix e desfazer transações são recursos deste aplicativo. Regras opcionais do manual precisam ser combinadas pela mesa. Confira os valores de cada posse no título.</small>
+            </div>
+        </div>
         <div id="modal-bank-settings" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bank-settings-title">
             <div class="modal-content">
                 <h3 id="bank-settings-title">Seu banco de brincadeira</h3>
@@ -385,7 +410,7 @@
         </div>
     </div>
 
-    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=5c3b21f1d9ef" allow="autoplay" loading="eager"></iframe>
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=268483068180" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -411,6 +436,77 @@
         function escapeHtml(text) {
             return String(text).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
         }
+        const RULE_GUIDE = [
+            {title:'Preparação',page:2,text:'Saldo: R$25.000; escolha um banqueiro.',keys:'inicio começar saldo dinheiro inicial'},
+            {title:'Ponto de partida',page:2,text:'Passou/parou no Início: receba R$2.000 na mesma jogada.',keys:'passar inicio bonus pagamento pro labore'},
+            {title:'Dados iguais',page:2,text:'Duplas permitem jogar novamente; três seguidas mandam à prisão.',keys:'dupla duplas consecutivas dados tirar repetir cadeia detencao'},
+            {title:'Ir à prisão',page:2,text:'Por três duplas, casa de detenção ou carta.',keys:'cadeia preso dados iguais noticia'},
+            {title:'Sair da prisão',page:2,text:'Com dupla, carta ou R$ 500 após terceira tentativa fracassada.',keys:'cadeia preso soltar fianca fiança rodada rodadas detencao'},
+            {title:'Visita à prisão',page:2,text:'Cair normalmente na prisão significa apenas visita.',keys:'cadeia visitante detencao'},
+            {title:'Comprar posse',page:2,text:'Compre uma posse sem dono pelo preço do tabuleiro.',keys:'propriedade terreno titulo compra banco avenida rua companhia'},
+            {title:'Aluguel',page:2,text:'Pague ao dono o aluguel indicado no título.',keys:'alugueis propriedade posse cobrar pagamento casas hotel'},
+            {title:'Companhias',page:2,text:'Multiplique dados pela taxa; possuir todas dobra essa taxa.',keys:'acoes companhia empresa banco eletricidade petrolifera dados aluguel'},
+            {title:'Construir casas',page:2,text:'Complete a cor; construa equilibradamente, na sua vez, pagando o banco.',keys:'comprar casa grupo terreno propriedade distribuicao aluguel'},
+            {title:'Hotel',page:1,text:'Todo grupo precisa de quatro casas por terreno antes do hotel.',keys:'construir comprar imoveis grupo cor'},
+            {title:'Estoque',page:1,text:'Sem casas/hotéis, espere retornarem ao banco.',keys:'casa hotel falta acabou construir comprar'},
+            {title:'Vender posse',page:1,text:'Venda construções pela metade do custo antes de negociar.',keys:'venda transferir transferencia troca negociar casas hotel propriedade'},
+            {title:'Hipoteca',page:1,text:'Sem construções nem aluguel; resgate na sua vez: título +20%.',keys:'hipotecar resgatar juros taxa posse casa propriedade banco'},
+            {title:'Notícias',page:2,text:'Siga a carta; devolva-a à pilha, exceto saída livre.',keys:'noticia sorte reves saida livre prisao carta'},
+            {title:'Dívidas',page:1,text:'Venda construções, hipoteque, negocie; empréstimos são proibidos.',keys:'divida sem dinheiro saldo insuficiente emprestimo pagar'},
+            {title:'Falência',page:1,text:'Sem recursos para quitar dívida, entregue tudo ao credor.',keys:'falir faliu divida pagar dinheiro eliminado'},
+            {title:'Vencedor',page:1,text:'Vence o último jogador sem falência.',keys:'ganhar vitoria objetivo fim terminar finalizar partida'},
+            {title:'Feriado',page:2,text:'Sem ação.',keys:'parar descanso nada'},
+            {title:'Impostos',page:2,text:'Cumpra o indicado no tabuleiro.',keys:'receita federal restituicao imposto renda'},
+            {title:'Regras opcionais',page:1,text:'Combine com a mesa antes da partida.',keys:'jogo curto tempo relogio variantes alternativas hotel tres casas'}
+        ];
+        const RULE_MANUAL = 'https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf';
+        function normalizeRuleSearch(text) {
+            return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        }
+        function ruleSearchTokens(query) {
+            return [...new Set(normalizeRuleSearch(query).split(/[^a-z0-9]+/).filter(Boolean))];
+        }
+        function searchRules(query) {
+            const tokens = ruleSearchTokens(query);
+            return RULE_GUIDE.filter(rule => {
+                const haystack = normalizeRuleSearch([rule.title,rule.text,rule.keys].join(' '));
+                return tokens.every(token => haystack.includes(token));
+            });
+        }
+        function highlightRule(text, query) {
+            const normalized = normalizeRuleSearch(text), spans = [];
+            for (const token of ruleSearchTokens(query)) {
+                let index = normalized.indexOf(token);
+                while (index >= 0) { spans.push([index,index+token.length]); index = normalized.indexOf(token,index+token.length); }
+            }
+            spans.sort((a,b)=>a[0]-b[0]);
+            const merged = [];
+            for (const span of spans) {
+                const last = merged.at(-1);
+                if (last && span[0] <= last[1]) last[1] = Math.max(last[1],span[1]);
+                else merged.push([...span]);
+            }
+            let output = '', end = 0;
+            for (const span of merged) { output += escapeHtml(text.slice(end,span[0]))+'<mark>'+escapeHtml(text.slice(span[0],span[1]))+'</mark>'; end=span[1]; }
+            return output+escapeHtml(text.slice(end));
+        }
+        function renderRules() {
+            const query = document.getElementById('rules-search').value;
+            const results = searchRules(query);
+            document.getElementById('rules-count').innerText = results.length+' tópico(s) encontrado(s)';
+            document.getElementById('rules-results').innerHTML = results.length ? results.map(rule =>
+                `<article class="rule-result"><h4>${highlightRule(rule.title,query)}</h4><p>${highlightRule(rule.text,query)}</p><a href="${RULE_MANUAL}#page=${rule.page}" target="_blank" rel="noopener noreferrer">Conferir no manual · página ${rule.page}</a></article>`
+            ).join('') : '<p>Nenhum tópico encontrado. Tente uma palavra como “prisão”, “casas” ou “hipoteca”, ou consulte o manual completo.</p>';
+        }
+        function openRules() {
+            applyBankTheme();
+            document.getElementById('rules-search').value = '';
+            renderRules();
+            document.getElementById('modal-rules').classList.remove('hidden');
+        }
+        function closeRules() { document.getElementById('modal-rules').classList.add('hidden'); }
+        document.getElementById('modal-rules').addEventListener?.('click',event => { if(event.target.id==='modal-rules') closeRules(); });
+        document.addEventListener?.('keydown',event => { if(event.key==='Escape') closeRules(); });
         const handledCommands = new Set();
         const clientId = crypto.randomUUID();
         const channel = new BroadcastChannel('banco_imobiliario_channel');
@@ -502,6 +598,7 @@
             const index = Number(payload.index);
             switch (action) {
                 case 'SETTINGS': openBankSettings(); break;
+                case 'RULES': openRules(); break;
                 case 'BANK_THEME': chooseBankTheme(payload.id); break;
                 case 'CREATE':
                     document.getElementById('create-banker').value = String(payload.name || '').trim();

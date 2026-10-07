@@ -55,6 +55,14 @@ for (const [app, id] of [[alice, 'alice'], [bob, 'bob']]) {
 }
 assert.equal(alice.run('state.players.alice.balance'), 10000);
 const beforeThemes = host.run('JSON.stringify(state)');
+assert.equal(host.run("searchRules('PRISAO').some(r=>r.title==='Sair da prisão')"), true);
+assert.equal(host.run("searchRules('cadeia').some(r=>r.title==='Ir à prisão')"), true);
+assert.equal(host.run("searchRules('dados iguais').some(r=>r.title==='Dados iguais')"), true);
+assert.equal(host.run("searchRules('hipoteca')[0].page"), 1);
+assert.equal(host.run("searchRules('inexistente xyz').length"), 0);
+assert.equal(host.run("highlightRule('Prisão & casas', 'prisao')"), '<mark>Prisão</mark> &amp; casas');
+host.run('openRules(); closeRules();');
+assert.equal(host.run('JSON.stringify(state)'), beforeThemes);
 host.run("chooseBankTheme('mu')");
 alice.run("chooseBankTheme('new')");
 host.run('broadcastState()'); flush();

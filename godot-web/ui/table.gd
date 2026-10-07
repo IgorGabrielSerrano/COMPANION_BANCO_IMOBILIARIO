@@ -244,6 +244,7 @@ func _build_screen() -> void:
 	_fill_layout(content,{"banco":palette.name,"mesa":"Mesa "+str(snapshot.get("pin","")) if active_screen=="game" else "Seu banco de brincadeira"})
 	header = content.get_node("Cabecalho")
 	content.get_node("Cabecalho/Tema").pressed.connect(func(): _command("SETTINGS"))
+	content.get_node("Cabecalho/Regras").pressed.connect(func(): _command("RULES"))
 	var exit: Button = content.get_node("Cabecalho/Sair")
 	exit.visible = active_screen == "game"
 	exit.pressed.connect(func(): _command("LEAVE"))
