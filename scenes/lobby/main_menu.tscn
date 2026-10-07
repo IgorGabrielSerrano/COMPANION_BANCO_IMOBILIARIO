@@ -1,0 +1,162 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmainmenu001"]
+
+[ext_resource type="Script" path="res://scripts/lobby/main_menu.gd" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 40.0
+offset_right = -20.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="VBox/Header"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "🏦 BANCO IMOBILIÁRIO"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Companion Digital Web para Tabuleiro Físico"
+horizontal_alignment = 1
+
+[node name="TabContainer" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="BtnTabJoin" type="Button" parent="VBox/TabContainer"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🎮 Entrar na Mesa"
+
+[node name="BtnTabCreate" type="Button" parent="VBox/TabContainer"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "👑 Criar Nova Mesa"
+
+[node name="Panels" type="Control" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="JoinPanel" type="PanelContainer" parent="VBox/Panels"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="VBox/Panels/JoinPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LabelPin" type="Label" parent="VBox/Panels/JoinPanel/VBox"]
+layout_mode = 2
+text = "Código PIN da Mesa:"
+
+[node name="RoomPinInput" type="LineEdit" parent="VBox/Panels/JoinPanel/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+placeholder_text = "Ex: 7492"
+alignment = 1
+max_length = 6
+
+[node name="LabelName" type="Label" parent="VBox/Panels/JoinPanel/VBox"]
+layout_mode = 2
+text = "Seu Nome:"
+
+[node name="PlayerNameInput" type="LineEdit" parent="VBox/Panels/JoinPanel/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+placeholder_text = "Ex: Igor"
+
+[node name="LabelColor" type="Label" parent="VBox/Panels/JoinPanel/VBox"]
+layout_mode = 2
+text = "Cor do seu Peão:"
+
+[node name="ColorContainer" type="HBoxContainer" parent="VBox/Panels/JoinPanel/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="Spacer" type="Control" parent="VBox/Panels/JoinPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnJoinRoom" type="Button" parent="VBox/Panels/JoinPanel/VBox"]
+custom_minimum_size = Vector2(0, 55)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🚀 Entrar na Mesa"
+
+[node name="CreatePanel" type="PanelContainer" parent="VBox/Panels"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="VBox/Panels/CreatePanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LabelBanker" type="Label" parent="VBox/Panels/CreatePanel/VBox"]
+layout_mode = 2
+text = "Nome do Banqueiro:"
+
+[node name="BankerNameInput" type="LineEdit" parent="VBox/Panels/CreatePanel/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+placeholder_text = "Ex: Banqueiro Igor"
+
+[node name="LabelCash" type="Label" parent="VBox/Panels/CreatePanel/VBox"]
+layout_mode = 2
+text = "Saldo Inicial de Cada Jogador:"
+
+[node name="StartingCashInput" type="LineEdit" parent="VBox/Panels/CreatePanel/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "25000"
+alignment = 1
+
+[node name="Spacer" type="Control" parent="VBox/Panels/CreatePanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnCreateRoom" type="Button" parent="VBox/Panels/CreatePanel/VBox"]
+custom_minimum_size = Vector2(0, 55)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "👑 Iniciar Mesa de Jogo"
+
+[node name="StatusLabel" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+horizontal_alignment = 1
+autowrap_mode = 3

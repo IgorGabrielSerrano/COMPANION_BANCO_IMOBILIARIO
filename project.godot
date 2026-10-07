@@ -1,0 +1,36 @@
+; Engine configuration file.
+; It's best edited using the editor UI, but can also be edited directly.
+; Format:
+;   [section] ; section goes below
+
+config_version=5
+
+[application]
+
+config/name="Companion Banco Imobiliário"
+config/description="Companion Web App para gerenciar o banco do jogo físico Banco Imobiliário em tempo real pelo celular."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+
+[autoload]
+
+GameManager="*res://scripts/autoload/game_manager.gd"
+NetworkManager="*res://scripts/autoload/network_manager.gd"
+SoundManager="*res://scripts/autoload/sound_manager.gd"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/size/mode=0
+window/size/initial_position_type=0
+window/size/resizable=true
+window/handheld/orientation=1
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+viewport/transparent_background=true

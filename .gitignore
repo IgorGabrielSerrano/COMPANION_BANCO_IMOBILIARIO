@@ -1,0 +1,6 @@
+# Godot 4 export & local files
+.godot/
+*.tmp
+*.exe
+build/
+*.import

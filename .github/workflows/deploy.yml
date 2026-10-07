@@ -1,0 +1,50 @@
+name: "Deploy Companion Banco Imobiliário para GitHub Pages"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  export_web:
+    runs-on: ubuntu-latest
+    name: Build & Export Godot Web
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Godot Web Export
+        uses: abarichello/godot-ci@v4.3.0
+        with:
+          relative_project_path: "./"
+          godot_version: "4.3"
+
+      - name: Copy Service Worker
+        run: |
+          cp coi-serviceworker.js build/web/ || true
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "build/web"
+
+  deploy:
+    needs: export_web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

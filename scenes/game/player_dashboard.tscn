@@ -1,0 +1,110 @@
+[gd_scene load_steps=2 format=3 uid="uid://cplayerdash001"]
+
+[ext_resource type="Script" path="res://scripts/game/player_dashboard.gd" id="1_dash"]
+
+[node name="PlayerDashboard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dash")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 30.0
+offset_right = -16.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="PlayerNameLabel" type="Label" parent="VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Nome do Jogador"
+
+[node name="RoomPinLabel" type="Label" parent="VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "Mesa #7492"
+
+[node name="BalanceCard" type="PanelContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="VBox/BalanceCard"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="VBox/BalanceCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "SEU SALDO ATUAL"
+horizontal_alignment = 1
+
+[node name="BalanceLabel" type="Label" parent="VBox/BalanceCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 32
+text = "R$ 25.000"
+horizontal_alignment = 1
+
+[node name="ActionsGrid" type="GridContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="BtnPayPlayer" type="Button" parent="VBox/ActionsGrid"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "💸 Pagar Jogador"
+
+[node name="BtnPayBank" type="Button" parent="VBox/ActionsGrid"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🏦 Pagar ao Banco"
+
+[node name="BtnReceiveBank" type="Button" parent="VBox/ActionsGrid"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "💰 Receber Banco"
+
+[node name="BtnPassGo" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(0, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "⚡ Ponto de Partida (+R$ 2.000)"
+
+[node name="TxHistory" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Title" type="Label" parent="VBox/TxHistory"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "📜 Histórico de Transações:"
+
+[node name="Scroll" type="ScrollContainer" parent="VBox/TxHistory"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TxVBox" type="VBoxContainer" parent="VBox/TxHistory/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
