@@ -396,11 +396,12 @@ func _render_account() -> void:
 		)
 	var players_panel: Panel = layout.get_node("JogadoresSala")
 	players_panel.offset_bottom = players_panel.offset_top + maxi(80,46+snapshot.get("players",{}).size()*33)
-	_render_player_preview(players_panel)
+	var player_list := _render_player_preview(players_panel)
 	var history_title: Label = layout.get_node("TituloHistorico")
 	history_title.offset_top = players_panel.offset_bottom + 14
 	history_title.offset_bottom = history_title.offset_top + 28
 	layout.custom_minimum_size.y = history_title.offset_bottom + 10
+	_fit_players.call_deferred(layout,players_panel,player_list,history_title)
 	var txs: Array = snapshot.get("transactions",[])
 	if txs.is_empty(): body.add_child(_label("As negociações aparecem aqui.",13,"muted"))
 	else:
@@ -435,7 +436,14 @@ func _render_prison() -> void:
 		box.add_child(_label(player.name,14,"text",true))
 		box.add_child(_label("Preso · %d/3 rodadas" % int(player.get("jailRounds",0)) if player.get("jailed",false) else "Livre · duplas %d/3" % int(player.get("consecutiveDoubles",0)),12,"muted"))
 
-func _render_player_preview(panel: Panel) -> void:
+func _fit_players(layout: Control, panel: Panel, list: VBoxContainer, history_title: Label) -> void:
+	if not is_instance_valid(layout) or not is_instance_valid(list): return
+	panel.offset_bottom = panel.offset_top + maxf(80,list.get_combined_minimum_size().y+12)
+	history_title.offset_top = panel.offset_bottom+14
+	history_title.offset_bottom = history_title.offset_top+28
+	layout.custom_minimum_size.y = history_title.offset_bottom+10
+
+func _render_player_preview(panel: Panel) -> VBoxContainer:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side,10)
@@ -466,6 +474,7 @@ func _render_player_preview(panel: Panel) -> void:
 		amount.size_flags_horizontal = Control.SIZE_SHRINK_END
 		row.add_child(amount)
 		box.add_child(row)
+	return box
 
 func _render_jail(me: Dictionary) -> void:
 	var box := _card(body)
