@@ -16,7 +16,7 @@ function page() {
         add() {}, remove() {}, toggle() {}, contains() { return true; }
     }, appendChild() {}, setAttribute() {} });
     const context = vm.createContext({
-        crypto: { randomUUID }, console, URLSearchParams, location: { search: '' }, setTimeout: fn => fn(),
+        crypto: { randomUUID }, structuredClone, console, URLSearchParams, location: { search: '' }, setTimeout: fn => fn(),
         performance: { now: () => now },
         requestAnimationFrame: callback => { frames.set(++nextFrame, callback); return nextFrame; },
         cancelAnimationFrame: id => frames.delete(id),
@@ -229,6 +229,77 @@ assert.equal(animated.run('samplesStarted'), 2);
 assert.equal(animated.run('activeMoneySounds.size'), 0);
 assert.equal(animated.run('displayedBalance'), 14000);
 console.log('OK: áudio compartilhado, moedas, toque final e botão para silenciar.');
+
+const undoHost = page();
+undoHost.run(`state = { pin:'8888', playerId:'banker', playerName:'Banker', isBanker:true,
+    players: { banker:{name:'Banker',balance:5000,isBanker:true,properties:[]},
+        buyer:{name:'Buyer',balance:5000,properties:[]}, other:{name:'Other',balance:5000,properties:[]} }, transactions:[] }; enterGame();
+    handleIncomingData({type:'BUY_PROPERTY',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:1000},property:{name:'Rua',rent:100}});`);
+const purchaseId = undoHost.run('state.transactions.at(-1).id');
+const propertyId = undoHost.run('state.players.buyer.properties[0].id');
+undoHost.run(`handleIncomingData({type:'BUILD_HOUSES',actorId:'buyer',propertyId:'${propertyId}',houses:1,rent:600,unitCost:0,revision:0});`);
+assert.equal(undoHost.run('state.players.buyer.properties[0].houses'), 0);
+assert.equal(undoHost.run('state.players.buyer.balance'), 4000);
+undoHost.run(`handleIncomingData({type:'BUILD_HOUSES',actorId:'buyer',propertyId:'${propertyId}',houses:1,rent:600,unitCost:200,revision:0});`);
+const constructionId = undoHost.run('state.transactions.at(-1).id');
+assert.equal(undoHost.run('state.players.buyer.balance'), 3800);
+assert.equal(undoHost.run('state.players.buyer.properties[0].houses'), 1);
+assert.equal(undoHost.run('state.players.buyer.properties[0].rent'), 600);
+// A repeated/stale construction cannot debit again.
+undoHost.run(`handleIncomingData({type:'BUILD_HOUSES',actorId:'buyer',propertyId:'${propertyId}',houses:1,rent:600,unitCost:200,revision:0});`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 3800);
+assert.match(undoHost.run(`undoProblem(state.transactions.find(tx=>tx.id==='${purchaseId}'))`), /alterada/);
+undoHost.run(`handleIncomingData({type:'UNDO',actorId:'banker',transactionId:'${constructionId}'}, true);`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 3800); // Even a forged host identity is blocked remotely.
+undoHost.run(`handleIncomingData({type:'UNDO',actorId:'buyer',transactionId:'${constructionId}'});`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 3800);
+undoHost.run(`handleIncomingData({type:'SELL_PROPERTY',actorId:'buyer',propertyId:'${propertyId}',buyerId:'other',amount:900});`);
+const saleId = undoHost.run('state.transactions.at(-1).id');
+assert.equal(undoHost.run('state.players.other.properties[0].houses'), 1);
+undoHost.run(`undoTransaction('${saleId}'); undoTransaction('${constructionId}'); undoTransaction('${purchaseId}');`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 5000);
+assert.equal(undoHost.run('state.players.other.balance'), 5000);
+assert.equal(undoHost.run('state.players.buyer.properties.length'), 0);
+assert.equal(undoHost.run('state.players.other.properties.length'), 0);
+assert.equal(undoHost.run('state.transactions.filter(tx=>tx.undone).length'), 3);
+assert.notEqual(undoHost.run(`undoProblem(state.transactions.find(tx=>tx.id==='${purchaseId}'))`), '');
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'other',amount:100}});`);
+const transferId = undoHost.run('state.transactions.at(-1).id');
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:50}}); undoTransaction('${transferId}');`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 4950);
+assert.equal(undoHost.run('state.players.other.balance'), 5000);
+undoHost.run(`handleIncomingData({type:'BUY_PROPERTY',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:1000},property:{name:'Praça',rent:100}});`);
+const secondBuy = undoHost.run('state.transactions.at(-1).id');
+const secondProp = undoHost.run('state.players.buyer.properties[0].id');
+undoHost.run(`handleIncomingData({type:'BUILD_HOUSES',actorId:'buyer',propertyId:'${secondProp}',houses:4,rent:900,unitCost:99999,revision:0});`);
+assert.equal(undoHost.run('state.players.buyer.properties[0].houses'), 0);
+assert.equal(undoHost.run('state.players.buyer.balance'), 3950);
+undoHost.run(`handleIncomingData({type:'MORTGAGE_PROPERTY',actorId:'buyer',propertyId:'${secondProp}'});`);
+const mortgageId = undoHost.run('state.transactions.at(-1).id');
+undoHost.run(`undoTransaction('${mortgageId}'); undoTransaction('${secondBuy}');`);
+assert.equal(undoHost.run('state.players.buyer.balance'), 4950);
+assert.equal(undoHost.run('state.players.buyer.properties.length'), 0);
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'other',amount:100}});`);
+const fundedTransfer = undoHost.run('state.transactions.at(-1).id');
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'other',tx:{fromId:'other',toId:'BANK',amount:5100}});`);
+const spendingId = undoHost.run('state.transactions.at(-1).id');
+assert.match(undoHost.run(`undoProblem(state.transactions.find(t=>t.id==='${fundedTransfer}'))`), /Saldo insuficiente/);
+undoHost.run(`undoTransaction('${spendingId}'); undoTransaction('${fundedTransfer}');`);
+assert.equal(undoHost.run('state.players.other.balance'), 5000);
+console.log('OK: construção paga ao banco, casas/aluguel, venda preserva casas, reversão completa e permissão exclusiva do banqueiro.');
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:200}});
+    handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:300}});`);
+const batchIds = JSON.parse(undoHost.run('JSON.stringify(state.transactions.slice(-2).map(t=>t.id))'));
+const batchBefore = undoHost.run('state.players.buyer.balance');
+undoHost.run(`openUndoModal(${JSON.stringify(batchIds)}); confirmUndo();`);
+assert.equal(undoHost.run('state.players.buyer.balance'), batchBefore + 500);
+assert.equal(undoHost.run('state.transactions.slice(-2).every(t=>t.undone)'), true);
+undoHost.run(`handleIncomingData({type:'TRANSFER',actorId:'buyer',tx:{fromId:'buyer',toId:'BANK',amount:25}});`);
+const validId = undoHost.run('state.transactions.at(-1).id');
+const stateBeforeBadBatch = undoHost.run('JSON.stringify(state)');
+assert.notEqual(undoHost.run(`prepareUndo(['${validId}', '${batchIds[0]}']).problem`), '');
+assert.equal(undoHost.run('JSON.stringify(state)'), stateBeforeBadBatch);
+console.log('OK: desfazer múltiplas ações contabiliza todas e lote inválido não altera nada.');
 
 (async () => {
     const loading = page();

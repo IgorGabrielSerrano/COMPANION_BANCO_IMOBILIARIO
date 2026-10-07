@@ -316,6 +316,38 @@
                 </div>
             </div>
         </div>
+        <div id="modal-building" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="building-title">
+            <div class="modal-content">
+                <h3 id="building-title">Construir casas</h3>
+                <strong id="building-property-name"></strong>
+                <input type="hidden" id="building-property-id">
+                <input type="hidden" id="building-revision">
+                <label for="building-houses">Quantidade total de casas na propriedade (0 a 4):</label>
+                <input id="building-houses" type="number" min="0" max="4" step="1" value="0" oninput="updateBuildingTotal()">
+                <label for="building-rent">Novo aluguel (R$) — conforme sua carta:</label>
+                <input id="building-rent" type="number" min="1" step="1">
+                <label for="building-cost">Preço de cada casa pago ao banco (R$):</label>
+                <input id="building-cost" type="number" min="1" step="1" oninput="updateBuildingTotal()">
+                <small style="color:var(--bank-muted)">Informe o novo aluguel conforme a carta. Cada casa acrescentada é paga ao banco; os dados só mudam se houver saldo para a construção.</small>
+                <strong id="building-total" aria-live="polite"></strong>
+                <div style="display:flex;gap:8px">
+                    <button style="flex:1" onclick="document.getElementById('modal-building').classList.add('hidden')">Cancelar</button>
+                    <button id="building-confirm" class="btn-blue" style="flex:1" onclick="confirmBuilding()">Salvar casas e aluguel</button>
+                </div>
+            </div>
+        </div>
+        <div id="modal-undo" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="undo-title">
+            <div class="modal-content">
+                <h3 id="undo-title">Desfazer transação</h3>
+                <div id="undo-items" style="display:flex;flex-direction:column;gap:8px"></div>
+                <div id="undo-impact" style="font-size:0.85rem;line-height:1.6"></div>
+                <p style="font-size:0.8rem;color:var(--bank-muted)">Confirme para restaurar dinheiro, posse, casas e aluguel das ações selecionadas. Todas serão desfeitas juntas, da mais recente para a mais antiga.</p>
+                <div style="display:flex;gap:8px">
+                    <button style="flex:1" onclick="document.getElementById('modal-undo').classList.add('hidden')">Cancelar</button>
+                    <button id="undo-confirm" class="btn-blue" style="flex:1" onclick="confirmUndo()">Confirmar desfazer</button>
+                </div>
+            </div>
+        </div>
         <div id="modal-bank-settings" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bank-settings-title">
             <div class="modal-content">
                 <h3 id="bank-settings-title">Seu banco de brincadeira</h3>
@@ -329,7 +361,7 @@
         </div>
     </div>
 
-    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=5bccfb5ab121" allow="autoplay" loading="eager"></iframe>
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=ac65af8d2399" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -365,19 +397,19 @@
                 card: '#25282d', cardText: '#ffffff', positive: '#73d7b0', negative: '#f09999',
                 description: 'Preto, prata e um pouco de pose.' },
             mu: { id: 'mu', name: 'MuBank', font: 'NunitoSans', bg: '#faf8ff', surface: '#ffffff',
-                accent: '#820ad1', accentText: '#ffffff', text: '#24152f', muted: '#796a85', border: '#eee6f4', soft: '#f1e6fa',
+                accent: '#820ad1', accentText: '#ffffff', text: '#24152f', muted: '#665271', border: '#957aa9', soft: '#eee0fa',
                 card: '#820ad1', cardText: '#ffffff', positive: '#167345', negative: '#b52d48',
                 description: 'O roxinho que só cobra aluguel no tabuleiro.' },
             intel: { id: 'intel', name: 'Intel Bank', font: 'DMSans', bg: '#fffaf6', surface: '#ffffff',
-                accent: '#f36d00', accentText: '#ffffff', text: '#2b251f', muted: '#81746a', border: '#f1e5db', soft: '#fff0e3',
+                accent: '#f36d00', accentText: '#ffffff', text: '#2b251f', muted: '#6e5847', border: '#a68161', soft: '#ffead8',
                 card: '#f36d00', cardText: '#ffffff', positive: '#18764c', negative: '#b42e40',
                 description: 'Laranja por fora. Magnata por dentro.' },
             new: { id: 'new', name: 'NeoBank', font: 'Manrope', bg: '#f4fbfd', surface: '#ffffff',
-                accent: '#007eae', accentText: '#ffffff', text: '#13394a', muted: '#658592', border: '#deedf1', soft: '#e3f6fb',
+                accent: '#007eae', accentText: '#ffffff', text: '#13394a', muted: '#446675', border: '#6b94a4', soft: '#dceff7',
                 card: '#0062db', cardText: '#ffffff', gradientFrom: '#0751d7', gradientTo: '#00bfd5', positive: '#177650', negative: '#b4304e',
                 description: 'No azul, até alguém cair na sua avenida.' },
-            nexus: { id: 'nexus', name: 'Nexus Bank', font: 'Sora', bg: '#071712', surface: '#10271e',
-                accent: '#00eb77', accentText: '#04271a', text: '#f0fff7', muted: '#a0b7ac', border: '#244d3b', soft: '#173e2a',
+            nexus: { id: 'nexus', name: 'Nexus Bank', font: 'Sora', bg: '#050505', surface: '#151515',
+                accent: '#00eb77', accentText: '#04271a', text: '#f0fff7', muted: '#a0b7ac', border: '#3e3e3e', soft: '#232323',
                 card: '#00dd70', cardText: '#05281b', positive: '#66e9a7', negative: '#ff9f9f',
                 description: 'Verde para avançar. Sorte para enriquecer.' }
         };
@@ -457,6 +489,9 @@
                 case 'PAY_PLAYER': case 'PAY_BANK': case 'RECEIVE_BANK': openModal(action); break;
                 case 'BUY': openPropertyModal(); break;
                 case 'EDIT': editProperty(index); break;
+                case 'BUILD': openBuildingModal(index); break;
+                case 'UNDO': undoTransaction(payload.id); break;
+                case 'REVIEW_UNDO': openUndoModal(payload.ids); break;
                 case 'SELL': openTransferModal(index); break;
                 case 'MORTGAGE': deleteProperty(index); break;
                 case 'JAIL': jailAction(payload.action); break;
@@ -743,7 +778,7 @@
             channel.onmessage = ({data}) => {
                 if (!data || data.pin !== state.pin || data.sender === clientId) return;
                 if ((data.type === 'SYNC' || data.type === 'JOINED') && !state.isBanker) handleIncomingData(data);
-                else if (data.type === 'COMMAND' && state.isBanker) handleIncomingData(data.command);
+                else if (data.type === 'COMMAND' && state.isBanker) handleIncomingData(data.command, true);
                 else if (data.type === 'END') resetRoom();
             };
         }
@@ -757,7 +792,7 @@
             peer.on('connection', (conn) => {
                 connections.push(conn);
                 conn.on('data', (data) => {
-                    handleIncomingData(data);
+                    handleIncomingData(data, true);
                 });
                 // JOIN sends the initial state after the player is registered.
             });
@@ -807,7 +842,7 @@
             connections.forEach(c => { if (c.open) c.send(msg); });
         }
 
-        function handleIncomingData(data) {
+        function handleIncomingData(data, fromRemote = false) {
             if (!data || typeof data !== 'object') return;
             if (data.type === 'END') return resetRoom();
             if (data.type === 'JOINED') {
@@ -838,8 +873,12 @@
                 return;
             }
             if (!state.isBanker || handledCommands.has(data.commandId)) return;
+            if (data.type === 'UNDO' && (fromRemote || data.actorId !== state.playerId)) return;
             if (data.commandId) handledCommands.add(data.commandId);
             const actor = state.players[data.actorId];
+            const reversible = ['TRANSFER', 'BUY_PROPERTY', 'EDIT_PROPERTY', 'BUILD_HOUSES', 'MORTGAGE_PROPERTY', 'SELL_PROPERTY'].includes(data.type);
+            const before = reversible ? structuredClone(state.players) : null;
+            const historyLength = state.transactions.length;
             if (data.type === 'JOIN') {
                 if (!data.player?.data?.name || data.player.id !== data.actorId) return;
                 const normalizedName = normalizePlayerName(data.player.data.name);
@@ -864,7 +903,13 @@
                 channel.postMessage(acknowledgement);
                 connections.forEach(c => { if (c.open) c.send(acknowledgement); });
             } else if (!actor) return;
-            else if (data.type === 'LEAVE') {
+            else if (data.type === 'UNDO') {
+                const prepared = prepareUndo(data.transactionIds || [data.transactionId]);
+                if (prepared.problem) return alert(prepared.problem);
+                state.players = prepared.next.players;
+                state.departedPlayers = prepared.next.departedPlayers;
+                state.transactions = prepared.next.transactions;
+            } else if (data.type === 'LEAVE') {
                 state.departedPlayers ||= {};
                 state.departedPlayers[data.actorId] = actor;
                 delete state.players[data.actorId];
@@ -879,7 +924,7 @@
                     if (tx.fromId !== data.actorId || tx.toId !== 'BANK' ||
                         !data.property || !data.property.name || !Number.isSafeInteger(data.property.rent) || data.property.rent <= 0) return;
                     (actor.properties ||= []).push({ id: crypto.randomUUID(), name: data.property.name,
-                        price: tx.amount, rent: data.property.rent, color: propertyColor(data.property.color) });
+                        price: tx.amount, rent: data.property.rent, houses: 0, color: propertyColor(data.property.color) });
                 }
                 if (from) from.balance -= tx.amount;
                 if (to) to.balance += tx.amount;
@@ -890,6 +935,21 @@
                 prop.name = data.name;
                 prop.rent = data.rent;
                 prop.color = propertyColor(data.color);
+            } else if (data.type === 'BUILD_HOUSES') {
+                const prop = (actor.properties || []).find(p => p.id === data.propertyId);
+                if (!prop || !Number.isSafeInteger(data.houses) || data.houses < 0 || data.houses > 4 ||
+                    !Number.isSafeInteger(data.rent) || data.rent <= 0 || !Number.isSafeInteger(data.unitCost) || data.unitCost < 0) return;
+                const added = data.houses - (prop.houses || 0);
+                const cost = added * data.unitCost;
+                if (data.revision !== (prop.buildRevision || 0) || added < 0 || (added > 0 && data.unitCost <= 0) || !Number.isSafeInteger(cost) || actor.balance < cost) return;
+                prop.houses = data.houses;
+                prop.rent = data.rent;
+                prop.buildRevision = (prop.buildRevision || 0) + 1;
+                if (cost > 0) {
+                    actor.balance -= cost;
+                    state.transactions.push({ fromId: data.actorId, toId: 'BANK', from: actor.name, to: '🏦 Banco',
+                        amount: cost, note: 'Construção em ' + prop.name + ' · ' + data.houses + ' casa(s)' });
+                }
             } else if (data.type === 'MORTGAGE_PROPERTY' || data.type === 'SELL_PROPERTY') {
                 const index = (actor.properties || []).findIndex(p => p.id === data.propertyId);
                 if (index < 0) return;
@@ -936,8 +996,138 @@
                     }
                 } else return;
             } else return;
+            if (reversible) recordUndo(data, before, historyLength);
             broadcastState();
             updateUI();
+        }
+
+        function propertyIndex(players = { ...state.departedPlayers, ...state.players }) {
+            const result = {};
+            for (const [owner, player] of Object.entries(players)) {
+                for (const property of player.properties || []) result[property.id] = { owner, property };
+            }
+            return result;
+        }
+
+        function propertyFingerprint(value) {
+            if (!value) return '';
+            const prop = { ...value.property, houses: value.property.houses || 0 };
+            delete prop.buildRevision;
+            return JSON.stringify([value.owner, Object.entries(prop).sort(([a], [b]) => a.localeCompare(b))]);
+        }
+
+        function recordUndo(command, before, historyLength) {
+            const balances = {}, properties = {};
+            for (const [id, player] of Object.entries(state.players)) {
+                const delta = player.balance - before[id].balance;
+                if (delta !== 0) balances[id] = delta;
+            }
+            const oldProps = propertyIndex(before), newProps = propertyIndex(state.players);
+            for (const id of new Set([...Object.keys(oldProps), ...Object.keys(newProps)])) {
+                if (propertyFingerprint(oldProps[id]) !== propertyFingerprint(newProps[id])) {
+                    properties[id] = { before: oldProps[id] ? structuredClone(oldProps[id]) : null,
+                        after: newProps[id] ? structuredClone(newProps[id]) : null };
+                }
+            }
+            if (!Object.keys(balances).length && !Object.keys(properties).length) return;
+            if (state.transactions.length === historyLength) {
+                const prop = state.players[command.actorId].properties.find(p => p.id === command.propertyId);
+                state.transactions.push({ fromId: command.actorId, toId: 'BANK', from: state.players[command.actorId].name,
+                    to: 'Registro da posse', amount: 0, note: (command.type === 'BUILD_HOUSES' ? 'Casas e aluguel: ' : 'Edição de posse: ') + (prop?.name || '') });
+            }
+            const tx = state.transactions.at(-1);
+            tx.id = crypto.randomUUID();
+            tx.actionType = command.type;
+            tx.undo = { balances, properties };
+        }
+
+        function undoProblem(tx, context = state) {
+            if (!tx?.undo || tx.undone) return 'Esta ação não possui reversão disponível.';
+            const players = { ...context.departedPlayers, ...context.players };
+            const props = propertyIndex(players);
+            for (const [id, change] of Object.entries(tx.undo.properties)) {
+                if (propertyFingerprint(props[id]) !== propertyFingerprint(change.after)) {
+                    return 'A posse foi alterada depois desta ação. Desfaça primeiro a construção, edição ou transferência posterior.';
+                }
+                if (change.before && !players[change.before.owner]) return 'O jogador original não está disponível nesta mesa.';
+            }
+            for (const [id, delta] of Object.entries(tx.undo.balances)) {
+                if (!players[id] || players[id].balance - delta < 0) {
+                    return 'Saldo insuficiente para estornar. Desfaça primeiro as movimentações posteriores do jogador.';
+                }
+            }
+            return '';
+        }
+
+        function applyUndo(tx, context = state) {
+            const players = { ...context.departedPlayers, ...context.players };
+            for (const [id, delta] of Object.entries(tx.undo.balances)) players[id].balance -= delta;
+            const props = propertyIndex(players);
+            for (const [id, change] of Object.entries(tx.undo.properties)) {
+                const current = props[id];
+                if (current) players[current.owner].properties = players[current.owner].properties.filter(p => p.id !== id);
+                if (change.before) {
+                    const restored = structuredClone(change.before.property);
+                    restored.buildRevision = Math.max(current?.property.buildRevision || 0, restored.buildRevision || 0) + 1;
+                    (players[change.before.owner].properties ||= []).push(restored);
+                }
+            }
+            tx.undone = true;
+            tx.undoneBy = context.playerName;
+        }
+
+        function prepareUndo(ids) {
+            if (!Array.isArray(ids) || !ids.length || ids.some(id => typeof id !== 'string')) return { problem: 'Selecione ao menos uma ação.' };
+            const unique = new Set(ids);
+            const next = structuredClone(state);
+            const selected = next.transactions.filter(t => unique.has(t.id)).reverse();
+            if (selected.length !== unique.size) return { problem: 'Uma ação selecionada não está mais disponível.' };
+            for (const tx of selected) {
+                const problem = undoProblem(tx, next);
+                if (problem) return { problem };
+                applyUndo(tx, next);
+            }
+            return { next, problem: '' };
+        }
+
+        let pendingUndoIds = [];
+
+        function openUndoModal(ids) {
+            if (!state.isBanker) return;
+            pendingUndoIds = [...new Set(Array.isArray(ids) ? ids : [])];
+            const prepared = prepareUndo(pendingUndoIds);
+            const selected = state.transactions.filter(t => pendingUndoIds.includes(t.id));
+            document.getElementById('undo-title').innerText = selected.length === 1 ? 'Desfazer transação' : 'Desfazer transações';
+            document.getElementById('undo-items').innerHTML = selected.map(t => `<div class="card" style="padding:10px;background:var(--bank-bg)"><b>${escapeHtml(t.from)} para ${escapeHtml(t.to)}: ${formatMoney(t.amount)}</b><small style="display:block">${escapeHtml(t.note || '')}</small></div>`).join('');
+            const before = { ...state.departedPlayers, ...state.players };
+            const after = { ...prepared.next?.departedPlayers, ...prepared.next?.players };
+            const impacts = [];
+            if (!prepared.problem) for (const [id, player] of Object.entries(before)) {
+                const delta = after[id].balance - player.balance;
+                if (delta !== 0) impacts.push(`${escapeHtml(player.name)}: ${delta > 0 ? '+' : '−'}${formatMoney(Math.abs(delta))} → ${formatMoney(after[id].balance)}`);
+            }
+            document.getElementById('undo-impact').innerHTML = `<b>${selected.length} ação(ões) selecionada(s)</b><br>` + (prepared.problem ? escapeHtml(prepared.problem) : impacts.join('<br>') || 'Serão restauradas as informações da posse.');
+            document.getElementById('undo-confirm').disabled = !!prepared.problem;
+            document.getElementById('modal-undo').classList.remove('hidden');
+        }
+
+        function confirmUndo() {
+            if (!state.isBanker) return;
+            const prepared = prepareUndo(pendingUndoIds);
+            if (prepared.problem) return alert(prepared.problem);
+            sendToHost({ type: 'UNDO', transactionIds: pendingUndoIds });
+            document.getElementById('modal-undo').classList.add('hidden');
+            pendingUndoIds = [];
+        }
+
+        function undoTransaction(id) {
+            if (!state.isBanker) return;
+            const tx = state.transactions.find(t => t.id === id);
+            const problem = undoProblem(tx);
+            if (problem) return alert(problem);
+            if (confirm('Desfazer esta ação e restaurar os valores e as posses envolvidos?')) {
+                sendToHost({ type: 'UNDO', transactionId: id });
+            }
         }
 
         function jailAction(action) {
@@ -1001,8 +1191,9 @@
                     const chip = document.createElement('div');
                     chip.className = 'property-chip';
                     chip.style.color = propertyColor(p.color);
-                    chip.innerHTML = `<div>🏠 ${escapeHtml(p.name)} (Alg: ${formatMoney(p.rent)})</div>
+                    chip.innerHTML = `<div>🏠 ${escapeHtml(p.name)} · ${p.houses || 0} casa(s) (Alg: ${formatMoney(p.rent)})</div>
                         <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                            <button class="btn-small" onclick="openBuildingModal(${idx})">🏠 Construir</button>
                             <button class="btn-small" onclick="editProperty(${idx})">✏️ Editar</button>
                             <button class="btn-small" onclick="openTransferModal(${idx})">🔄 Transferir</button>
                             <button class="btn-small" onclick="deleteProperty(${idx})">🏦 Hipotecar</button>
@@ -1025,7 +1216,7 @@
                 
                 let propsHtml = '';
                 if (p.properties && p.properties.length > 0) {
-                    propsHtml = '<div style="margin-top:2px;">' + p.properties.map(pr => `<span class="property-chip" style="color:${propertyColor(pr.color)}">🏠 ${escapeHtml(pr.name)} (Alg: ${formatMoney(pr.rent)})</span>`).join('') + '</div>';
+                    propsHtml = '<div style="margin-top:2px;">' + p.properties.map(pr => `<span class="property-chip" style="color:${propertyColor(pr.color)}">🏠 ${escapeHtml(pr.name)} · ${pr.houses || 0} casa(s) (Alg: ${formatMoney(pr.rent)})</span>`).join('') + '</div>';
                 }
 
                 row.innerHTML = `
@@ -1136,6 +1327,49 @@
 
         function editProperty(idx) {
             openPropertyModal(idx);
+        }
+
+        function openBuildingModal(index) {
+            const prop = state.players[state.playerId]?.properties?.[index];
+            if (!prop) return;
+            document.getElementById('building-property-id').value = prop.id;
+            document.getElementById('building-revision').value = prop.buildRevision || 0;
+            document.getElementById('building-property-name').innerText = prop.name;
+            document.getElementById('building-houses').value = Math.min(4, (prop.houses || 0) + 1);
+            document.getElementById('building-houses').min = prop.houses || 0;
+            document.getElementById('building-rent').value = prop.rent;
+            document.getElementById('building-cost').value = '';
+            updateBuildingTotal();
+            document.getElementById('modal-building').classList.remove('hidden');
+        }
+
+        function updateBuildingTotal() {
+            const id = document.getElementById('building-property-id').value;
+            const prop = state.players[state.playerId]?.properties?.find(p => p.id === id);
+            if (!prop) return;
+            const added = Math.max(0, Number(document.getElementById('building-houses').value) - (prop.houses || 0));
+            const cost = Number(document.getElementById('building-cost').value) || 0;
+            document.getElementById('building-total').innerText = added + ' casa(s) nova(s) · Pagar ao banco: ' + formatMoney(added * cost);
+        }
+
+        function confirmBuilding() {
+            const propertyId = document.getElementById('building-property-id').value;
+            const houses = Number(document.getElementById('building-houses').value);
+            const rent = Number(document.getElementById('building-rent').value);
+            const unitCost = Number(document.getElementById('building-cost').value);
+            if (!Number.isSafeInteger(houses) || houses < 0 || houses > 4) return alert('Informe de 0 a 4 casas!');
+            if (!Number.isSafeInteger(rent) || rent <= 0) return alert('Informe o novo aluguel!');
+            if (!Number.isSafeInteger(unitCost) || unitCost < 0) return alert('Informe um preço válido por casa!');
+            const me = state.players[state.playerId];
+            if (!me?.properties?.some(p => p.id === propertyId)) return alert('Esta posse não está mais disponível.');
+            const prop = me.properties.find(p => p.id === propertyId);
+            const added = houses - (prop.houses || 0);
+            if (added < 0) return alert('Use a quantidade atual ou acrescente casas.');
+            if (added > 0 && unitCost <= 0) return alert('Informe o preço de cada casa. A construção deve ser paga ao banco.');
+            const cost = added * unitCost;
+            if (!Number.isSafeInteger(cost) || me.balance < cost) return alert('Saldo insuficiente para construir!');
+            sendToHost({ type: 'BUILD_HOUSES', propertyId, houses, rent, unitCost, revision: Number(document.getElementById('building-revision').value) });
+            document.getElementById('modal-building').classList.add('hidden');
         }
 
         function previewPropertyColor() {

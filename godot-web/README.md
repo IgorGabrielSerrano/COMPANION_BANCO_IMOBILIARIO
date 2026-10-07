@@ -60,6 +60,25 @@ freely positioned controls and editable text. See `layouts/COMO-EDITAR.md`.
 The native preview's Tema button changes the demo bank appearance. The web
 router continues to handle actual room operations.
 
+## Construction and banker undo
+
+Properties store 0–4 houses and a manually entered rent. The construction form
+asks for the unit price; the host computes `(new houses - existing houses) *
+unit price` and debits the player to the bank atomically. Increasing the house
+count without a positive price or sufficient balance is rejected. A property
+revision prevents repeated submissions charging twice. Rent-only correction
+without increasing the house count does not charge a construction cost.
+
+New financial/property actions store inverse patches with balance deltas and
+changed property snapshots. Only the host's local banker can issue undo; remote
+commands, including a forged banker actor id, are rejected. In History the
+banker taps a transaction to review an undo, or uses Select for a batch. The
+confirmation previews each player's net balance change. Batches are simulated
+newest-first on a clone and applied only when every selected action is valid.
+Property dependencies and insufficient reversal balances require undoing the
+later related action first. Undone entries remain marked in history. Legacy
+entries without inverse data remain visible but cannot be fully reverted.
+
 Browser QA uses Playwright iPhone 11–17 viewport profiles, including heights
 with browser controls visible, with all four skins. This is viewport and touch
 emulation in Chromium, not certification on physical iPhones or mobile Safari.

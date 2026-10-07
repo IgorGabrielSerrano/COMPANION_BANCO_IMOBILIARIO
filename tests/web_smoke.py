@@ -68,6 +68,10 @@ def run(channel):
             page.wait_for_timeout(300)
             assert layout()["scroll"]["height"] / 844 > 0.72
             assert layout()["coinSpinning"]
+            sizes = [layout()["buttons"][key] for key in ["pay_player", "pay_bank", "receive", "go"]]
+            assert max(rect["height"] for rect in sizes) - min(rect["height"] for rect in sizes) < 1.1
+            assert max(rect["width"] for rect in sizes) - min(rect["width"] for rect in sizes) < 1.5
+            assert max(rect["y"] for rect in sizes) - min(rect["y"] for rect in sizes) < 1.1
             click_canvas("go")
             page.wait_for_function("Object.values(state.players)[0].balance === 27000")
             page.wait_for_function("Object.keys(moneyBuffers).length === 4 && moneyAudio.state === 'running'")
@@ -82,6 +86,22 @@ def run(channel):
             page.locator("#btn-save-prop").click()
             page.wait_for_function("Object.values(state.players)[0].properties.length === 1")
             page.wait_for_timeout(300)
+            click_canvas("prop_build_0")
+            page.wait_for_selector("#modal-building:not(.hidden)")
+            page.locator("#building-houses").fill("2")
+            page.locator("#building-rent").fill("500")
+            page.locator("#building-cost").fill("100")
+            assert "R$ 200" in page.locator("#building-total").inner_text()
+            page.locator("#building-confirm").click()
+            page.wait_for_function("state.players[state.playerId].properties[0].houses === 2 && state.players[state.playerId].balance === 24800")
+            build_id = page.evaluate("state.transactions.at(-1).id")
+            select_tab("historico")
+            click_canvas("undo_" + build_id)
+            page.wait_for_selector("#modal-undo:not(.hidden)")
+            assert "R$ 200" in page.locator("#undo-impact").inner_text()
+            page.locator("#undo-confirm").click()
+            page.wait_for_function("state.players[state.playerId].properties[0].houses === 0 && state.players[state.playerId].balance === 25000")
+            select_tab("posses")
             click_canvas("prop_mortgage_0")
             page.wait_for_selector("#modal-mortgage-prop:not(.hidden)")
             assert page.locator("#mortgage-prop-value").inner_text() == "R$ 1.000"
@@ -102,6 +122,18 @@ def run(channel):
             select_tab("conta")
             assert "jail_enter" not in layout()["buttons"]
             assert "view_players" in layout()["buttons"]
+            page.evaluate("passGO(); passGO();")
+            batch_ids = page.evaluate("state.transactions.slice(-2).map(t => t.id)")
+            select_tab("historico")
+            click_canvas("select_history")
+            for transaction_id in reversed(batch_ids):
+                click_canvas("undo_" + transaction_id)
+            click_canvas("undo_selected")
+            page.wait_for_selector("#modal-undo:not(.hidden)")
+            assert "2 ação" in page.locator("#undo-impact").inner_text()
+            assert "R$ 4.000" in page.locator("#undo-impact").inner_text()
+            page.locator("#undo-confirm").click()
+            page.wait_for_function("state.players[state.playerId].balance === 25000")
             # A larger table checks scrolling, names with accents and bank emoji sanitization.
             page.evaluate("""() => {
                 for (let i = 0; i < 10; i++) state.players['other-' + i] = {

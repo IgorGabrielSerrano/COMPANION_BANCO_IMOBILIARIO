@@ -34,6 +34,8 @@ var touching_body: bool = false
 var suppress_touch_click: bool = false
 var font_bold: FontVariation
 var qa: bool = false
+var selecting_history: bool = false
+var selected_history: Dictionary = {}
 @export_enum("c4", "mu", "intel", "new", "nexus") var preview_bank: String = "c4"
 
 func _ready() -> void:
@@ -500,7 +502,7 @@ func _render_players() -> void:
 		card.add_child(row)
 		card.add_child(_label(("Banqueiro · " if player.get("isBanker",false) else "")+("Preso %d/3" % int(player.get("jailRounds",0)) if player.get("jailed",false) else "Livre · duplas %d/3" % int(player.get("consecutiveDoubles",0))),11,"muted"))
 		for prop in player.get("properties",[]):
-			var property := _label(_display(prop.name)+" · aluguel "+_money(float(prop.rent)),12)
+			var property := _label(_display(prop.name)+" · %d casa(s) · aluguel " % int(prop.get("houses",0))+_money(float(prop.rent)),12)
 			property.add_theme_color_override("font_color",_property_color(prop.get("color","#f1c40f")))
 			card.add_child(property)
 
@@ -529,9 +531,12 @@ func _render_properties() -> void:
 		var title := _label(prop.name,18,"text",true)
 		title.add_theme_color_override("font_color",_property_color(prop.get("color","#f1c40f")))
 		card.add_child(title)
-		card.add_child(_label("Aluguel "+_money(float(prop.rent))+" · Compra "+_money(float(prop.get("price",0))),12,"muted"))
-		var actions := HBoxContainer.new()
-		actions.add_theme_constant_override("separation",6)
+		card.add_child(_label("%d casa(s) · Aluguel " % int(prop.get("houses",0))+_money(float(prop.rent))+" · Compra "+_money(float(prop.get("price",0))),12,"muted"))
+		var actions := GridContainer.new()
+		actions.columns = 2
+		actions.add_theme_constant_override("h_separation",8)
+		actions.add_theme_constant_override("v_separation",8)
+		actions.add_child(_button("Construir","home",func(): _command("BUILD",{"index":index}),"soft","prop_build_"+str(index)))
 		actions.add_child(_button("Editar","edit",func(): _command("EDIT",{"index":index}),"normal","prop_edit_"+str(index)))
 		actions.add_child(_button("Vender","transfer",func(): _command("SELL",{"index":index}),"normal","prop_sell_"+str(index)))
 		actions.add_child(_button("Hipotecar","bank",func(): _command("MORTGAGE",{"index":index}),"normal","prop_mortgage_"+str(index)))
@@ -541,6 +546,27 @@ func _render_history() -> void:
 	body.add_child(_label("Histórico da mesa",23,"text",true))
 	var txs: Array = snapshot.get("transactions",[])
 	body.add_child(_label("%d movimentações" % txs.size(),12,"muted"))
+	if snapshot.get("isBanker",false): body.add_child(_label("Desfazer restaura dinheiro e posses. Disponível para ações registradas a partir desta versão.",12,"muted"))
+	var valid_ids := {}
+	for tx in txs:
+		if tx.has("undo") and not tx.get("undone",false): valid_ids[str(tx.id)] = true
+	var previous_count := selected_history.size()
+	for id in selected_history.keys():
+		if not valid_ids.has(id): selected_history.erase(id)
+	if previous_count > 0 and selected_history.is_empty(): selecting_history = false
+	if snapshot.get("isBanker",false) and not valid_ids.is_empty():
+		var tools := HBoxContainer.new()
+		tools.add_theme_constant_override("separation",8)
+		tools.add_child(_button("Cancelar seleção" if selecting_history else "Selecionar","",func():
+			selecting_history = not selecting_history
+			selected_history.clear()
+			_render_body()
+		,"normal","select_history"))
+		if selecting_history:
+			var batch := _button("Desfazer (%d)" % selected_history.size(),"",func(): _command("REVIEW_UNDO",{"ids":selected_history.keys()}),"soft","undo_selected")
+			batch.disabled = selected_history.is_empty()
+			tools.add_child(batch)
+		body.add_child(tools)
 	if txs.is_empty(): body.add_child(_label("As negociações da mesa vão aparecer aqui.",14,"muted"))
 	for i in range(txs.size()-1,-1,-1): _transaction_row(txs[i])
 
@@ -556,6 +582,32 @@ func _transaction_row(tx: Dictionary) -> void:
 	row.add_child(amount)
 	card.add_child(row)
 	if not str(tx.get("note","")).is_empty(): card.add_child(_label(tx.note,11,"muted"))
+	if tx.get("undone",false):
+		card.add_child(_label("Ação desfeita pelo banqueiro",12,"muted",true))
+	elif snapshot.get("isBanker",false) and active_tab == "historico" and tx.has("undo"):
+		if selecting_history:
+			var check := CheckBox.new()
+			check.text = "Selecionada" if selected_history.has(str(tx.id)) else "Selecionar esta ação"
+			check.button_pressed = selected_history.has(str(tx.id))
+			check.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(check)
+		else:
+			card.add_child(_label("Toque para revisar e desfazer",10,"muted"))
+		var hit := Button.new()
+		hit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		hit.set_meta("qa_key","undo_"+str(tx.id))
+		hit.add_theme_stylebox_override("normal",StyleBoxEmpty.new())
+		hit.add_theme_stylebox_override("hover",_style(Color(0,0,0,0),_c("accent")))
+		hit.add_theme_stylebox_override("pressed",StyleBoxEmpty.new())
+		card.get_parent().add_child(hit)
+		hit.pressed.connect(func():
+			if suppress_touch_click: return
+			if selecting_history:
+				if selected_history.has(str(tx.id)): selected_history.erase(str(tx.id))
+				else: selected_history[str(tx.id)] = true
+				_render_body()
+			else: _command("REVIEW_UNDO",{"ids":[tx.id]})
+		)
 
 func _animate_money(target: float, immediate: bool) -> void:
 	if balance_tween: balance_tween.kill()
