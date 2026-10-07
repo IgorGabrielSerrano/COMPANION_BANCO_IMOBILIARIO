@@ -19,10 +19,20 @@ local function esc(s)
     return tostring(s or ''):gsub('&','&amp;'):gsub('<','&lt;'):gsub('>','&gt;'):gsub('"','&quot;')
 end
 local function label(color) return config.names[color] or color end
+local function controlledColor(color)
+    -- O anfitrião opera o jogador atual sem trocar de assento.
+    if config.started and Player[color].host then return colors[turnIndex] end
+    return color
+end
 function canReceiveTitle(args)
     if not config.started then return false end
     for i=1,config.count do if colors[i]==args.color then return true end end
     return false
+end
+function titleRecipient(args)
+    local color=controlledColor(args.color)
+    if canReceiveTitle({color=color}) then return color end
+    return nil
 end
 local function playable(color)
     if not canReceiveTitle({color=color}) then printToColor('Configure a mesa e escolha uma cor ativa.',color) return false end
@@ -151,6 +161,7 @@ local function watchDice(color)
 end
 
 function rollDice(_,color)
+    color=controlledColor(color)
     if not playable(color) then return end
     if rolling or pending then printToColor('Avance ou descarte o resultado anterior antes de rolar novamente.',color) return end
     local a,b=getObjectFromGUID(diceIds[1]),getObjectFromGUID(diceIds[2])
@@ -161,6 +172,7 @@ end
 
 function onObjectRandomized(object,color)
     if object.getGUID()~=diceIds[1] and object.getGUID()~=diceIds[2] then return end
+    color=controlledColor(color)
     if not playable(color) then return end
     if (pending and pending.color~=color) or (rolling and roller~=color) then
         printToColor('Outra pessoa tem um resultado pendente. A rolagem manual não será usada.',color) return
@@ -170,10 +182,12 @@ function onObjectRandomized(object,color)
 end
 
 function discardRoll(_,color)
+    color=controlledColor(color)
     if pending and (pending.color==color or Player[color].host) then pending=nil end
 end
 
 function advancePawn(_,color)
+    color=controlledColor(color)
     if not pending or pending.color~=color then printToColor('Role os dados da sua cor primeiro.',color) return end
     local pawn = getObjectFromGUID(pawnIds[color])
     if not pawn then printToColor('Seu peao esta ausente.',color) return end
@@ -199,6 +213,7 @@ function advancePawn(_,color)
 end
 
 function drawNews(_,color)
+    color=controlledColor(color)
     if not playable(color) or newsBusy then return end
     local deck=nil
     for _,o in ipairs(getAllObjects()) do

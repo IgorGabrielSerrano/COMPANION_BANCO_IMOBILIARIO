@@ -74,7 +74,7 @@ def generate(out,base,spaces,colors,obj):
         wrapped(d,'Guarde na sua mão após registrar a compra no Companion.',498,19)
         titleFaces.append(im)
         card=obj('Card',f'ff{s["numero"]:04}',0,0,0,nick=s['nome'])
-        card.update(Hands=True,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.addContextMenuItem("Guardar na minha mão", function(color) if Global.call("canReceiveTitle",{color=color}) then self.deal(1,color) else printToColor("Escolha uma cor ativa e inicie a mesa.",color) end end) end')
+        card.update(Hands=True,CardID=100+len(titleCards),GMNotes=f'companion_title:{s["numero"]}',Description=f"Preço de compra: R$ {s['valor_indicado']}. Aluguéis, construção e hipoteca aguardam os títulos oficiais. Registre a posse no Companion.",LuaScript='function onLoad() self.addContextMenuItem("Guardar posse (host: jogador da vez)", function(color) local recipient=Global.call("titleRecipient",{color=color}) if recipient then self.deal(1,recipient) else printToColor("Escolha uma cor ativa e inicie a mesa.",color) end end) end')
         titleCards.append(card)
     sheet=Image.new('RGB',(4000,1800),'#f2f6f8')
     for i,im in enumerate(titleFaces): sheet.paste(im,((i%10)*400,(i//10)*600))

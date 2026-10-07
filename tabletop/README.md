@@ -10,6 +10,8 @@ Os arquivos de imagem e malha são carregados por HTTPS do GitHub Pages para que
 
 ## Jogar com amigos
 
+**Mesa espelhada / um único computador:** o anfitrião pode abrir uma partida single player no Tabletop e compartilhar a tela com os amigos. Configure os nomes normalmente. **Rolar dados**, **Avançar**, **Descartar** e **Notícias**, quando usados pelo anfitrião, controlam o jogador da vez sem trocar de assento. A tecla **R** usada pelo anfitrião também registra os dados para o jogador atual. O anfitrião continua podendo **Passar vez**. O painel mostra o nome do participante representado; os amigos podem acessar apenas o Companion para administrar o banco.
+
 1. Crie uma sala multiplayer no Tabletop e carregue a mesa. Os participantes precisam do Tabletop Simulator.
 2. No painel inicial, o anfitrião escolhe de 2 a 8 participantes e preenche nomes diferentes para cada cor. Clique em **Iniciar partida**. Cada pessoa escolhe essa mesma cor no seletor de assento do Tabletop. Os peões recebem os nomes; os reservas ficam bloqueados fora do percurso. Os nomes e a configuração são preservados ao salvar a partida. Durante a partida, **Jogadores** mostra a lista; nomes e quantidade ficam bloqueados para preservar as posses.
 3. Abra o [Companion](https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/) no celular ou navegador. O banqueiro cria a mesa e compartilha o PIN.

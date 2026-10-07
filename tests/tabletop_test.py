@@ -162,8 +162,30 @@ passTurn(Player.White) -- clique duplicado não pula Bia
 assert(string.find(lastXml,'VEZ DE Bia',1,true))
 local before=objects.aa0003.moves
 advancePawn(nil,'Red') assert(objects.aa0003.moves==before)
+-- Host controla o jogador da vez sem trocar de assento (mesa espelhada).
+flush()
+objects.dd0001.value=2 objects.dd0002.value=5
+local hostPawnMoves=objects.aa0001.moves
+local blueMoves=objects.aa0003.moves
+assert(titleRecipient({color='White'})=='Blue')
+assert(titleRecipient({color='Red'})=='Red')
+rollDice(nil,'White') flush()
+assert(string.find(lastXml,'Bia: 2 + 5 = 7',1,true))
+advancePawn(nil,'White')
+assert(objects.aa0003.moves==blueMoves+1)
+assert(objects.aa0001.moves==hostPawnMoves)
+drawNews(nil,'White') assert(string.find(lastXml,'Bia · NOTÍCIAS',1,true))
+objects.dd0001.value=3 objects.dd0002.value=3
+onObjectRandomized(objects.dd0001,'White')
+onObjectRandomized(objects.dd0002,'White') flush()
+assert(string.find(lastXml,'Bia: 3 + 3 = 6',1,true))
+discardRoll(nil,'White')
+rollDice(nil,'White') flush()
+assert(string.find(lastXml,'Bia: 3 + 3 = 6',1,true))
+passTurn(Player.White) flush()
+assert(string.find(lastXml,'VEZ DE Ana &amp; Igor',1,true))
 local savedTurn=onSave() onLoad(savedTurn)
-assert(string.find(lastXml,'VEZ DE Bia',1,true))
+assert(string.find(lastXml,'VEZ DE Ana &amp; Igor',1,true))
 ''')
 ET.fromstring('<root>'+lua.globals().lastXml+'</root>')
 print('OK: save de 40 casas; rolagem, autorização, consumo único, movimento manual, volta, espera e timeout.')
