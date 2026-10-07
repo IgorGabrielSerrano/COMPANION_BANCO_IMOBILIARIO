@@ -14,38 +14,42 @@
             --accent-green: #2ecc71;
             --accent-red: #e74c3c;
             --accent-blue: #3498db;
+            --accent-purple: #9b59b6;
             --text-color: #f0f6fc;
             --subtext: #8b949e;
             --border-color: #30363d;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 14px; overflow: hidden; }
-        .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 12px; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 12px; overflow: hidden; }
+        .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; }
         header { text-align: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.2rem; color: var(--accent-gold); }
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+        h1 { font-size: 1.15rem; color: var(--accent-gold); }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; }
         .balance-card { text-align: center; background: linear-gradient(135deg, #161b22 0%, #1c232d 100%); border: 1px solid #38444d; }
         .balance-title { font-size: 0.75rem; color: var(--subtext); text-transform: uppercase; letter-spacing: 1px; }
-        .balance-value { font-size: 2.2rem; font-weight: bold; color: var(--accent-green); margin: 4px 0; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .balance-value { font-size: 2rem; font-weight: bold; color: var(--accent-green); margin: 2px 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         button:active { transform: scale(0.98); opacity: 0.9; }
         .btn-gold { background: linear-gradient(135deg, #f39c12, #d35400); color: #fff; border: none; }
         .btn-green { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; border: none; }
+        .btn-blue { background: linear-gradient(135deg, #3498db, #2980b9); color: #fff; border: none; }
         .btn-red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; }
-        .btn-large { grid-column: span 2; padding: 14px; font-size: 1.1rem; }
-        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-        label { font-size: 0.85rem; color: var(--subtext); }
-        input, select { background: #0d1117; border: 1px solid var(--border-color); color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; }
+        .btn-small { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; }
+        .btn-large { grid-column: span 2; padding: 14px; font-size: 1.05rem; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+        label { font-size: 0.8rem; color: var(--subtext); }
+        input, select { background: #0d1117; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-size: 0.95rem; }
         .tx-history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-        .tx-item { font-size: 0.82rem; padding: 8px 10px; background: #0d1117; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
-        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #0d1117; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.9rem; }
+        .tx-item { font-size: 0.8rem; padding: 6px 10px; background: #0d1117; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
+        .player-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; background: #0d1117; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; }
+        .property-chip { display: inline-block; background: #21262d; border: 1px solid #30363d; color: var(--accent-gold); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-top: 2px; }
         .hidden { display: none !important; }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
-        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 420px; padding: 18px; display: flex; flex-direction: column; gap: 10px; max-height: 90vh; overflow-y: auto; }
         .quick-amounts { display: flex; gap: 6px; }
         .quick-amounts button { flex: 1; padding: 8px; font-size: 0.8rem; }
-        .status-badge { display: inline-block; width: 10px; height: 10px; background: var(--accent-green); border-radius: 50%; }
+        .status-badge { display: inline-block; width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; }
         .status-badge.offline { background: var(--accent-red); }
     </style>
 </head>
@@ -85,54 +89,74 @@
 
         <!-- PLAYER DASHBOARD -->
         <div id="screen-player" class="hidden" style="display: flex; flex-direction: column; gap: 10px; height: 100%; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0;">
                 <div>
-                    <span id="player-display-name" style="font-weight: bold; font-size: 1.05rem;">-</span>
+                    <span id="player-display-name" style="font-weight: bold; font-size: 1rem;">-</span>
                     <span id="player-role-badge" style="font-size: 0.75rem; color: var(--accent-gold); margin-left: 4px;"></span>
                 </div>
-                <span id="room-pin-display" style="color: var(--accent-gold); font-weight: bold; font-size: 0.95rem;">Mesa #----</span>
+                <span id="room-pin-display" style="color: var(--accent-gold); font-weight: bold; font-size: 0.9rem;">Mesa #----</span>
             </div>
 
+            <!-- SALDO -->
             <div class="card balance-card">
                 <div class="balance-title">Seu Saldo Atual</div>
                 <div class="balance-value" id="balance-amount">R$ 25.000</div>
             </div>
 
+            <!-- BOTÃO PONTO DE PARTIDA -->
             <button class="btn-green btn-large" onclick="passGO()">⚡ Ponto de Partida (+R$ 2.000)</button>
 
+            <!-- AÇÕES DE PAGAMENTO -->
             <div class="grid-2">
                 <button onclick="openModal('PAY_PLAYER')">💸 Pagar Jogador</button>
                 <button onclick="openModal('PAY_BANK')">🏦 Pagar ao Banco</button>
                 <button onclick="openModal('RECEIVE_BANK')" style="grid-column: span 2;">💰 Receber do Banco</button>
             </div>
 
+            <!-- SISTEMA DE POSSES (MINHAS PROPRIEDADES) -->
+            <div class="card" style="padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.8rem; color: var(--subtext); font-weight: 600;">🏠 Minhas Posses (Propriedades):</span>
+                    <button class="btn-blue btn-small" onclick="openPropertyModal()">➕ Adicionar Posse</button>
+                </div>
+                <div id="my-properties-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            </div>
+
             <!-- JOGADORES NA MESA -->
             <div class="card" style="padding: 10px;">
                 <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 6px; display:flex; justify-content:space-between;">
                     <span>👥 Jogadores Conectados na Mesa:</span>
-                    <span id="player-count-label" style="color:var(--accent-gold);">0</span>
+                    <span id="player-count-label" style="color:var(--accent-gold); font-weight:bold;">0</span>
                 </div>
-                <div id="players-list-container" style="display: flex; flex-direction: column; gap: 4px;"></div>
+                <div id="players-list-container" style="display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
 
-            <!-- HISTÓRICO -->
+            <!-- HISTÓRICO DA MESA -->
             <div class="card tx-history" id="tx-feed-player">
                 <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa em Tempo Real:</div>
             </div>
 
-            <!-- BOTÕES DE GESTÃO DA PARTIDA -->
-            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 6px;">
+            <!-- GESTÃO DA MESA -->
+            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 4px;">
                 <button id="btn-end-game" class="btn-red" style="flex:1;" onclick="endGame()">🔴 Finalizar Partida</button>
                 <button style="flex:1; background: #30363d;" onclick="leaveRoom()">🚪 Sair da Mesa</button>
             </div>
         </div>
 
-        <!-- TRANSACTION MODAL -->
+        <!-- MODAL DE TRANSFERÊNCIA -->
         <div id="modal-tx" class="modal hidden">
             <div class="modal-content">
                 <h3 id="modal-title">💸 Realizar Transferência</h3>
-                <select id="modal-recipient" class="hidden"></select>
-                <input type="number" id="modal-amount" placeholder="Valor (R$)">
+                
+                <label id="lbl-recipient" class="hidden">Selecione o Jogador Receptor:</label>
+                <select id="modal-recipient" class="hidden" onchange="onRecipientChanged()"></select>
+
+                <label id="lbl-property" class="hidden">Escolher Posse/Propriedade (Aluguel Automático):</label>
+                <select id="modal-property" class="hidden" onchange="onPropertySelected()"></select>
+
+                <label>Valor da Transferência (R$):</label>
+                <input type="number" id="modal-amount" placeholder="Digite o valor (R$)">
+                
                 <div class="quick-amounts">
                     <button onclick="addAmount(50)">+50</button>
                     <button onclick="addAmount(100)">+100</button>
@@ -140,10 +164,32 @@
                     <button onclick="addAmount(500)">+500</button>
                     <button onclick="addAmount(2000)">+2k</button>
                 </div>
-                <input type="text" id="modal-note" placeholder="Motivo (opcional, ex: Aluguel)">
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
+
+                <label>Motivo ou Descrição:</label>
+                <input type="text" id="modal-note" placeholder="Motivo (opcional, ex: Aluguel da Av. Paulista)">
+                
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
                     <button style="flex:1" onclick="closeModal()">Cancelar</button>
                     <button class="btn-green" style="flex:1" onclick="confirmTransfer()">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE ADICIONAR / EDITAR POSSE -->
+        <div id="modal-property-editor" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="prop-modal-title">🏠 Cadastrar / Editar Posse</h3>
+                <input type="hidden" id="prop-edit-index" value="-1">
+
+                <label>Nome do Imóvel / Posse:</label>
+                <input type="text" id="prop-name-input" placeholder="Ex: Av. Paulista, Maracanã, Cia Eletricidade">
+
+                <label>Valor do Aluguel (R$):</label>
+                <input type="number" id="prop-rent-input" placeholder="Ex: 350">
+
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button style="flex:1" onclick="closePropertyModal()">Cancelar</button>
+                    <button class="btn-blue" style="flex:1" onclick="saveProperty()">Salvar Posse</button>
                 </div>
             </div>
         </div>
@@ -165,7 +211,7 @@
         let hostConn = null;
         const channel = new BroadcastChannel('banco_imobiliario_channel');
 
-        // Restore Session on Page Refresh (F5 / Reload)
+        // Restore Session on Page Refresh
         window.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('companion_session');
             if (saved) {
@@ -222,7 +268,7 @@
             document.getElementById('btn-tab-create').className = tab === 'create' ? 'btn-gold' : '';
         }
 
-        // Create Room (Host)
+        // Create Room
         function createRoom() {
             const banker = document.getElementById('create-banker').value.trim() || 'Banqueiro';
             const cash = parseInt(document.getElementById('create-cash').value) || 25000;
@@ -234,7 +280,12 @@
             state.players = {};
             state.transactions = [];
 
-            state.players[state.playerId] = { name: banker + ' (Banqueiro)', balance: cash, isBanker: true };
+            state.players[state.playerId] = {
+                name: banker + ' (Banqueiro)',
+                balance: cash,
+                isBanker: true,
+                properties: []
+            };
 
             initHostPeer();
             enterGame();
@@ -252,7 +303,12 @@
             state.isBanker = false;
 
             if (!state.players[state.playerId]) {
-                state.players[state.playerId] = { name: name, balance: 25000, isBanker: false };
+                state.players[state.playerId] = {
+                    name: name,
+                    balance: 25000,
+                    isBanker: false,
+                    properties: []
+                };
             }
 
             initClientPeer();
@@ -275,7 +331,6 @@
                 else initClientPeer();
             }
 
-            // Setup local tab synchronization
             channel.onmessage = (e) => {
                 if (e.data && e.data.pin === state.pin) {
                     state.players = e.data.players;
@@ -286,7 +341,6 @@
             };
         }
 
-        // PeerJS Host Connection
         function initHostPeer() {
             const hostId = 'banco-imobiliario-room-' + state.pin;
             peer = new Peer(hostId);
@@ -302,13 +356,9 @@
                 conn.on('open', () => broadcastState());
             });
 
-            peer.on('error', (err) => {
-                // If ID taken, reconnect
-                setStatus('Sincronizado Local', true);
-            });
+            peer.on('error', () => setStatus('Sincronizado Local', true));
         }
 
-        // PeerJS Client Connection
         function initClientPeer() {
             peer = new Peer();
             peer.on('open', () => {
@@ -359,13 +409,35 @@
                 state.transactions.push(tx);
                 broadcastState();
                 updateUI();
+            } else if (data.type === 'UPDATE_PROPERTIES') {
+                if (state.players[data.playerId]) {
+                    state.players[data.playerId].properties = data.properties;
+                    broadcastState();
+                    updateUI();
+                }
             }
         }
 
         function updateUI() {
-            const myData = state.players[state.playerId] || { balance: 25000 };
+            const myData = state.players[state.playerId] || { balance: 25000, properties: [] };
             document.getElementById('balance-amount').innerText = formatMoney(myData.balance);
             
+            // Render My Properties Chips
+            const myPropsList = document.getElementById('my-properties-list');
+            myPropsList.innerHTML = '';
+            const props = myData.properties || [];
+            
+            if (props.length === 0) {
+                myPropsList.innerHTML = '<span style="font-size:0.75rem; color:var(--subtext);">(Nenhuma posse cadastrada)</span>';
+            } else {
+                props.forEach((p, idx) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'property-chip';
+                    chip.innerHTML = `🏠 ${p.name} (${formatMoney(p.rent)}) <span onclick="editProperty(${idx})" style="cursor:pointer; margin-left:4px;">✏️</span> <span onclick="deleteProperty(${idx})" style="cursor:pointer; color:var(--accent-red); margin-left:2px;">❌</span>`;
+                    myPropsList.appendChild(chip);
+                });
+            }
+
             // Update players count & list
             const pKeys = Object.keys(state.players);
             document.getElementById('player-count-label').innerText = pKeys.length;
@@ -377,9 +449,18 @@
                 const p = state.players[pId];
                 const row = document.createElement('div');
                 row.className = 'player-row';
+                
+                let propsHtml = '';
+                if (p.properties && p.properties.length > 0) {
+                    propsHtml = '<div style="margin-top:2px;">' + p.properties.map(pr => `<span class="property-chip">🏠 ${pr.name} (Alg: ${formatMoney(pr.rent)})</span>`).join('') + '</div>';
+                }
+
                 row.innerHTML = `
-                    <span>${p.name} ${pId === state.playerId ? ' <b>(Você)</b>' : ''}</span>
-                    <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span><b>${p.name}</b> ${pId === state.playerId ? ' (Você)' : ''}</span>
+                        <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
+                    </div>
+                    ${propsHtml}
                 `;
                 plist.appendChild(row);
             });
@@ -393,6 +474,73 @@
                 item.innerText = `${tx.from} ➔ ${tx.to}: ${formatMoney(tx.amount)} ${tx.note ? '('+tx.note+')' : ''}`;
                 feed.appendChild(item);
             });
+
+            // If Pay Player modal is open, dynamically refresh recipient dropdown
+            if (!document.getElementById('modal-tx').classList.contains('hidden') && currentModalMode === 'PAY_PLAYER') {
+                refreshRecipientDropdown();
+            }
+        }
+
+        // PROPERTY MANAGEMENT MODAL
+        function openPropertyModal(editIdx = -1) {
+            document.getElementById('modal-property-editor').classList.remove('hidden');
+            document.getElementById('prop-edit-index').value = editIdx;
+            
+            if (editIdx >= 0) {
+                document.getElementById('prop-modal-title').innerText = '✏️ Editar Posse';
+                const p = (state.players[state.playerId].properties || [])[editIdx];
+                if (p) {
+                    document.getElementById('prop-name-input').value = p.name;
+                    document.getElementById('prop-rent-input').value = p.rent;
+                }
+            } else {
+                document.getElementById('prop-modal-title').innerText = '🏠 Cadastrar Nova Posse';
+                document.getElementById('prop-name-input').value = '';
+                document.getElementById('prop-rent-input').value = '';
+            }
+        }
+
+        function closePropertyModal() {
+            document.getElementById('modal-property-editor').classList.add('hidden');
+        }
+
+        function saveProperty() {
+            const name = document.getElementById('prop-name-input').value.trim();
+            const rent = parseInt(document.getElementById('prop-rent-input').value);
+            const editIdx = parseInt(document.getElementById('prop-edit-index').value);
+
+            if (!name || isNaN(rent) || rent <= 0) {
+                return alert('Por favor informe o nome da posse e o valor do aluguel!');
+            }
+
+            if (!state.players[state.playerId].properties) {
+                state.players[state.playerId].properties = [];
+            }
+
+            if (editIdx >= 0) {
+                state.players[state.playerId].properties[editIdx] = { name, rent };
+            } else {
+                state.players[state.playerId].properties.push({ name, rent });
+            }
+
+            closePropertyModal();
+            updateUI();
+
+            if (state.isBanker) broadcastState();
+            else sendToHost({ type: 'UPDATE_PROPERTIES', playerId: state.playerId, properties: state.players[state.playerId].properties });
+        }
+
+        function editProperty(idx) {
+            openPropertyModal(idx);
+        }
+
+        function deleteProperty(idx) {
+            if (confirm('Deseja excluir esta posse?')) {
+                state.players[state.playerId].properties.splice(idx, 1);
+                updateUI();
+                if (state.isBanker) broadcastState();
+                else sendToHost({ type: 'UPDATE_PROPERTIES', playerId: state.playerId, properties: state.players[state.playerId].properties });
+            }
         }
 
         function passGO() {
@@ -415,33 +563,101 @@
         function openModal(mode) {
             currentModalMode = mode;
             document.getElementById('modal-tx').classList.remove('hidden');
-            const select = document.getElementById('modal-recipient');
+            
+            const selectRec = document.getElementById('modal-recipient');
+            const selectProp = document.getElementById('modal-property');
+            const lblRec = document.getElementById('lbl-recipient');
+            const lblProp = document.getElementById('lbl-property');
+            
             document.getElementById('modal-amount').value = '';
             document.getElementById('modal-note').value = '';
             
             if (mode === 'PAY_PLAYER') {
                 document.getElementById('modal-title').innerText = '💸 Pagar a um Jogador';
-                select.classList.remove('hidden');
-                select.innerHTML = '';
-                
-                Object.keys(state.players).forEach(pId => {
-                    if (pId !== state.playerId) {
-                        const opt = document.createElement('option');
-                        opt.value = pId;
-                        opt.innerText = state.players[pId].name;
-                        select.appendChild(opt);
-                    }
-                });
-
-                if (select.children.length === 0) {
-                    select.innerHTML = '<option value="">(Nenhum outro jogador na mesa)</option>';
-                }
+                lblRec.classList.remove('hidden');
+                selectRec.classList.remove('hidden');
+                refreshRecipientDropdown();
             } else if (mode === 'PAY_BANK') {
                 document.getElementById('modal-title').innerText = '🏦 Pagar ao Banco';
-                select.classList.add('hidden');
+                lblRec.classList.add('hidden');
+                selectRec.classList.add('hidden');
+                lblProp.classList.add('hidden');
+                selectProp.classList.add('hidden');
             } else if (mode === 'RECEIVE_BANK') {
                 document.getElementById('modal-title').innerText = '💰 Receber do Banco';
-                select.classList.add('hidden');
+                lblRec.classList.add('hidden');
+                selectRec.classList.add('hidden');
+                lblProp.classList.add('hidden');
+                selectProp.classList.add('hidden');
+            }
+        }
+
+        function refreshRecipientDropdown() {
+            const selectRec = document.getElementById('modal-recipient');
+            const selectedVal = selectRec.value;
+            selectRec.innerHTML = '';
+            
+            // Filter ALL connected players except oneself
+            const allPlayers = Object.keys(state.players).filter(id => id !== state.playerId);
+            
+            allPlayers.forEach(pId => {
+                const opt = document.createElement('option');
+                opt.value = pId;
+                opt.innerText = state.players[pId].name;
+                selectRec.appendChild(opt);
+            });
+
+            if (allPlayers.length === 0) {
+                selectRec.innerHTML = '<option value="">(Nenhum outro jogador na mesa ainda)</option>';
+            } else if (selectedVal && allPlayers.includes(selectedVal)) {
+                selectRec.value = selectedVal;
+            }
+
+            onRecipientChanged();
+        }
+
+        function onRecipientChanged() {
+            const selectRec = document.getElementById('modal-recipient');
+            const targetId = selectRec.value;
+            const selectProp = document.getElementById('modal-property');
+            const lblProp = document.getElementById('lbl-property');
+            
+            selectProp.innerHTML = '';
+
+            if (targetId && state.players[targetId]) {
+                const targetProps = state.players[targetId].properties || [];
+                lblProp.classList.remove('hidden');
+                selectProp.classList.remove('hidden');
+
+                const optDefault = document.createElement('option');
+                optDefault.value = '';
+                optDefault.innerText = '-- Digitação Manual / Sem Posse --';
+                selectProp.appendChild(optDefault);
+
+                targetProps.forEach((p, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.innerText = `🏠 ${p.name} - Aluguel: ${formatMoney(p.rent)}`;
+                    selectProp.appendChild(opt);
+                });
+            } else {
+                lblProp.classList.add('hidden');
+                selectProp.classList.add('hidden');
+            }
+        }
+
+        function onPropertySelected() {
+            const selectRec = document.getElementById('modal-recipient');
+            const selectProp = document.getElementById('modal-property');
+            const targetId = selectRec.value;
+            const propIdx = selectProp.value;
+
+            if (targetId && state.players[targetId] && propIdx !== '') {
+                const p = state.players[targetId].properties[propIdx];
+                if (p) {
+                    document.getElementById('modal-amount').value = p.rent;
+                    document.getElementById('modal-note').value = 'Aluguel: ' + p.name;
+                }
             }
         }
 
@@ -465,7 +681,7 @@
             if (currentModalMode === 'PAY_PLAYER') {
                 const select = document.getElementById('modal-recipient');
                 const targetId = select.value;
-                if (!targetId || !state.players[targetId]) return alert('Selecione um jogador válido!');
+                if (!targetId || !state.players[targetId]) return alert('Selecione um jogador válido na mesa!');
                 if (myData.balance < amount) return alert('Saldo insuficiente!');
 
                 myData.balance -= amount;
