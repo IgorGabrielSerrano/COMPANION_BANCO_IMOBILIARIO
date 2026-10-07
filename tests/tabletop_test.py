@@ -17,6 +17,10 @@ assert all(re.fullmatch('[a-f0-9]{6}',o['GUID']) for o in save['ObjectStates']+a
 assert len([c for c in all_cards if c['GMNotes'].startswith('companion_news:')])==100
 assert len([c for c in all_cards if c['GMNotes'].startswith('companion_title:')])==28
 assert save['Hands']['Enable']
+pawns=[o for o in save['ObjectStates'] if o['GUID'].startswith('aa')]
+assert len(pawns)==8 and all(o['Name']=='Custom_Model' for o in pawns)
+assert len({tuple(o['ColorDiffuse'].values()) for o in pawns})==8
+assert all(o['ColorDiffuse']['a']==1 and o['CustomMesh']['MaterialIndex']==0 for o in pawns)
 mesh=(root/'build/tabletop'/save['ObjectStates'][0]['CustomMesh']['MeshURL'].split('/')[-1]).read_text()
 assert 'vt 1 0\nvt 0 0\nvt 0 1\nvt 1 1' in mesh
 news=json.loads((root/'build/tabletop/noticias.json').read_text(encoding='utf-8'))
@@ -83,6 +87,10 @@ editName(Player.White,'Rui','name_Blue')
 startGame(Player.White) assert(not canReceiveTitle({color='Blue'}))
 editName(Player.White,'Bia','name_Blue')
 startGame(Player.White)
+passTurn({color='Blue',host=false})
+assert(string.find(lastXml,'VEZ DE Ana &amp; Igor',1,true))
+passTurn(Player.White) flush()
+assert(string.find(lastXml,'VEZ DE Rui',1,true))
 assert(canReceiveTitle({color='Blue'})) assert(not canReceiveTitle({color='Green'}))
 assert(objects.aa0004.locked) assert(objects.aa0002.name=='Rui — Vermelho')
 assert(objects.ee0001.shuffled)
@@ -116,13 +124,16 @@ objects.dd0001.resting=true flush() discardRoll(nil,'Red')
 -- Timeout libera nova tentativa.
 objects.dd0001.resting=false rollDice(nil,'Red') flush()
 conditions[1].fail() conditions={}
+passTurn({color='Red',host=false}) flush()
 objects.dd0001.resting=true rollDice(nil,'Blue') flush() advancePawn(nil,'Blue')
 assert(objects.aa0003.moves==1)
 -- Sem peão/fora do tabuleiro não consome resultado nem cria movimento.
+passTurn({color='Blue',host=false}) flush() passTurn(Player.White) flush()
 rollDice(nil,'Red') flush() objects.aa0002.p={x=100,z=100}
 advancePawn(nil,'Red') assert(objects.aa0002.moves==moves)
 discardRoll(nil,'Red')
 -- Duplas e rolagem manual aparecem no painel e alimentam um único avanço.
+passTurn({color='Red',host=false}) flush()
 objects.dd0001.value=4 objects.dd0002.value=4
 onObjectRandomized(objects.dd0001,'Blue')
 onObjectRandomized(objects.dd0002,'Blue') flush()
@@ -130,6 +141,7 @@ assert(string.find(lastXml,'4 + 4 = 8',1,true))
 assert(string.find(lastXml,'DADOS IGUAIS',1,true))
 advancePawn(nil,'Blue') assert(objects.aa0003.moves==2)
 -- Cartas são reveladas no painel e o script não aplica dinheiro automaticamente.
+passTurn({color='Blue',host=false}) flush() passTurn(Player.White) flush()
 local card=fake('cc0001',-8,3) card.notes='companion_news:1'
 objects.ee0001.takeObject=function(params) params.callback_function(card) end
 drawNews(nil,'Red')
@@ -139,6 +151,19 @@ local saved=onSave()
 onLoad(saved)
 assert(canReceiveTitle({color='Blue'}))
 assert(string.find(lastXml,'Ana &amp; Igor',1,true))
+assert(string.find(lastXml,'VEZ DE Rui',1,true))
+-- Passar durante uma rolagem não muda o turno; pending é eliminado ao passar.
+objects.dd0001.resting=false
+rollDice(nil,'Red') passTurn({color='Red',host=false})
+assert(string.find(lastXml,'VEZ DE Rui',1,true))
+flush() objects.dd0001.resting=true flush()
+passTurn({color='Red',host=false})
+passTurn(Player.White) -- clique duplicado não pula Bia
+assert(string.find(lastXml,'VEZ DE Bia',1,true))
+local before=objects.aa0003.moves
+advancePawn(nil,'Red') assert(objects.aa0003.moves==before)
+local savedTurn=onSave() onLoad(savedTurn)
+assert(string.find(lastXml,'VEZ DE Bia',1,true))
 ''')
 ET.fromstring('<root>'+lua.globals().lastXml+'</root>')
 print('OK: save de 40 casas; rolagem, autorização, consumo único, movimento manual, volta, espera e timeout.')

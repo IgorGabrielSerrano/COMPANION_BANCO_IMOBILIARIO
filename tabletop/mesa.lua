@@ -12,6 +12,8 @@ local status='Configure os jogadores antes de iniciar.'
 local newsText=''
 local newsBusy=false
 local setupOpen=true
+local turnIndex=1
+local passing=false
 
 local function esc(s)
     return tostring(s or ''):gsub('&','&amp;'):gsub('<','&lt;'):gsub('>','&gt;'):gsub('"','&quot;')
@@ -24,7 +26,24 @@ function canReceiveTitle(args)
 end
 local function playable(color)
     if not canReceiveTitle({color=color}) then printToColor('Configure a mesa e escolha uma cor ativa.',color) return false end
+    if colors[turnIndex]~=color then printToColor('Agora é a vez de '..label(colors[turnIndex])..'.',color) return false end
     return true
+end
+
+function passTurn(player)
+    if not config.started or passing then return end
+    if player.color~=colors[turnIndex] and not player.host then
+        printToColor('Só o jogador da vez ou o anfitrião pode passar a vez.',player.color) return
+    end
+    if rolling then printToColor('Espere os dados pararem antes de passar a vez.',player.color) return end
+    passing=true
+    pending=nil
+    newsText=''
+    turnIndex=turnIndex%config.count+1
+    status='Vez encerrada. '..label(colors[turnIndex])..', pode rolar os dados.'
+    renderUI()
+    broadcastToAll('Agora é a vez de '..label(colors[turnIndex])..'.',{0.5,1,0.7})
+    Wait.time(function() passing=false end,0.4)
 end
 
 function renderUI()
@@ -39,7 +58,7 @@ function renderUI()
     end
     local roster={}
     if config.started then for i=1,config.count do table.insert(roster,colorNames[i]..': '..label(colors[i])) end end
-    UI.setXml('<Panel rectAlignment="UpperCenter" offsetXY="0 -12" width="780" height="155" color="#10273bf2"><VerticalLayout padding="10" spacing="6"><Text fontSize="23" color="white" preferredHeight="50">'..esc(status)..'</Text><Text fontSize="15" color="#bed6e8" preferredHeight="25">'..esc(table.concat(roster,' · '))..'</Text><HorizontalLayout preferredHeight="38" spacing="8"><Button onClick="uiRoll">Rolar dados</Button><Button onClick="uiAdvance">Avançar</Button><Button onClick="uiDiscard">Descartar</Button><Button onClick="uiNews">Notícias</Button><Button onClick="showSetup">Jogadores</Button><Button onClick="topView">Visão de cima</Button></HorizontalLayout></VerticalLayout></Panel>'..setup..(newsText~='' and '<Panel rectAlignment="LowerLeft" offsetXY="18 20" width="580" height="200" color="#10273bf2"><VerticalLayout padding="12"><Text fontSize="20" color="white" preferredHeight="145">'..esc(newsText)..'</Text><Button preferredHeight="30" onClick="closeNews">Fechar aviso</Button></VerticalLayout></Panel>' or ''))
+    UI.setXml('<Panel rectAlignment="UpperCenter" offsetXY="0 -12" width="780" height="190" color="#10273bf2"><VerticalLayout padding="10" spacing="6"><Text id="currentTurn" fontSize="20" color="#7ae5b0" preferredHeight="28">'..esc(config.started and ('VEZ DE '..label(colors[turnIndex])) or 'Aguardando início')..'</Text><Text fontSize="23" color="white" preferredHeight="50">'..esc(status)..'</Text><Text fontSize="15" color="#bed6e8" preferredHeight="25">'..esc(table.concat(roster,' · '))..'</Text><HorizontalLayout preferredHeight="38" spacing="8"><Button onClick="uiRoll">Rolar dados</Button><Button onClick="uiAdvance">Avançar</Button><Button onClick="uiDiscard">Descartar</Button><Button onClick="passTurn">Passar vez</Button><Button onClick="uiNews">Notícias</Button><Button onClick="showSetup">Jogadores</Button><Button onClick="topView">Visão de cima</Button></HorizontalLayout></VerticalLayout></Panel>'..setup..(newsText~='' and '<Panel rectAlignment="LowerLeft" offsetXY="18 20" width="580" height="200" color="#10273bf2"><VerticalLayout padding="12"><Text fontSize="20" color="white" preferredHeight="145">'..esc(newsText)..'</Text><Button preferredHeight="30" onClick="closeNews">Fechar aviso</Button></VerticalLayout></Panel>' or ''))
 end
 function editName(player,value,id)
     if not player.host or config.started then return end
@@ -63,7 +82,7 @@ function startGame(player)
         if name=='' or seen[name:lower()] then printToColor('Informe nomes diferentes para todos os jogadores.',player.color) return end
         seen[name:lower()]=true config.names[c]=name
     end
-    config.started=true setupOpen=false
+    config.started=true setupOpen=false turnIndex=1
     for i,c in ipairs(colors) do
         local pawn=getObjectFromGUID(pawnIds[c])
         if pawn then
@@ -80,13 +99,14 @@ function uiDiscard(p) discardRoll(nil,p.color) end
 function uiNews(p) drawNews(nil,p.color) end
 function topView(p) p.lookAt({position={0,1,0},pitch=80,yaw=0,distance=48}) end
 function closeNews() newsText='' renderUI() end
-function onSave() return JSON.encode({config=config,status=status,pending=pending,newsText=newsText}) end
+function onSave() return JSON.encode({config=config,status=status,pending=pending,newsText=newsText,turnIndex=turnIndex}) end
 
 function onLoad(saved)
     if saved and saved~='' then
         local ok,data=pcall(JSON.decode,saved)
         if ok and data.config then
             config=data.config status=data.status or status pending=data.pending newsText=data.newsText or ''
+            turnIndex=math.max(1,math.min(config.count,tonumber(data.turnIndex) or 1))
             setupOpen=not config.started
         end
     end

@@ -17,6 +17,10 @@ Os arquivos de imagem e malha são carregados por HTTPS do GitHub Pages para que
 5. Você também pode selecionar os dois dados e pressionar **R**. Essa rolagem atualiza o painel e alimenta o avanço. Não role enquanto outra pessoa tiver um resultado pendente. **Visão de cima** ajusta sua câmera para leitura. O tabuleiro permanece fixo para preservar o alinhamento dos peões e encaixes; use a câmera para mudar o ângulo.
 6. Registre pagamentos, duplas e prisão no Companion. A mesa mostra lembretes para Início, Receita Federal e restituição, mas não altera saldos.
 
+**Passar vez:** o painel indica o jogador atual. A partida começa no primeiro jogador configurado e segue a lista, retornando ao primeiro após o último. Só o jogador da vez ou o anfitrião pode passar; é preciso aguardar os dados pararem. Passar limpa o resultado pendente e o aviso de Notícias. Rolagem e compra de Notícias ficam disponíveis ao jogador da vez. A vez atual é preservada ao salvar/carregar. Duplas e prisão ainda são conferidas no Companion; passe a vez quando as regras exigirem.
+
+**Peões:** usam uma malha própria com material branco e oito cores sólidas (branco, vermelho, azul, verde, amarelo, laranja, roxo e rosa), correspondentes aos assentos. O nome aparece ao apontar para o peão e na configuração dos jogadores.
+
 **Prisão:** para ir à prisão, mova o peão à casa 11 e marque no Companion. Para tentativas de saída, role e use **Descartar resultado** quando não houver movimento. Antes de avançar após dados iguais, confira no Companion se a terceira dupla exige prisão. Turnos e regras são controlados pelos jogadores; o script não decide automaticamente quem pode jogar.
 
 ## Notícias e títulos

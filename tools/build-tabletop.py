@@ -5,6 +5,7 @@ import json
 import textwrap
 import zipfile
 import sys
+import math
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +114,26 @@ f 4/4 8/4 5/1 1/1
 '''
 mesh_name='tabuleiro-'+hashlib.sha256(mesh.encode()).hexdigest()[:12]+'.obj'
 (OUT/mesh_name).write_text(mesh,encoding='utf-8')
+# Peões próprios: malha branca recebe exatamente o tint de cada jogador.
+pawn_vertices=[]; pawn_faces=[]
+rings=[(0,.42),(.1,.5),(.25,.5),(.4,.33),(1,.18),(1.2,.27),(1.4,.36),(1.6,.29),(1.8,.01)]
+for y,radius in rings:
+    for segment in range(24):
+        a=2*math.pi*segment/24
+        pawn_vertices.append(f'v {radius*math.cos(a):.6f} {y:.6f} {radius*math.sin(a):.6f}')
+for ring in range(len(rings)-1):
+    for segment in range(24):
+        a=ring*24+segment+1; b=ring*24+(segment+1)%24+1; c=a+24; d=b+24
+        pawn_faces.extend([f'f {a} {c} {d}',f'f {a} {d} {b}'])
+for segment in range(1,23):
+    pawn_faces.append(f'f 1 {segment+1} {segment+2}')
+    top=(len(rings)-1)*24+1
+    pawn_faces.append(f'f {top} {top+segment+1} {top+segment}')
+pawn_faces=['f '+' '.join(v+'/1' for v in face.split()[1:]) for face in pawn_faces]
+pawn_mesh='o CompanionPawn\n'+'\n'.join(pawn_vertices+['vt 0.5 0.5']+pawn_faces)+'\n'
+pawn_mesh_name='peao-'+hashlib.sha256(pawn_mesh.encode()).hexdigest()[:12]+'.obj'
+(OUT/pawn_mesh_name).write_text(pawn_mesh,encoding='utf-8')
+Image.new('RGB',(32,32),'white').save(OUT/'peao-branco.png')
 palette={'White':(0.95,0.95,0.95),'Red':(.9,.15,.2),'Blue':(.15,.4,.95),'Green':(.1,.7,.3),'Yellow':(.95,.8,.1),'Orange':(1,.4,.1),'Purple':(.65,.25,.9),'Pink':(1,.4,.7)}
 offsets={name:dict(x=(i%4-1.5)*.65,z=(i//4-.5)*.9) for i,name in enumerate(palette)}
 def lua(v):
@@ -121,14 +142,16 @@ def lua(v):
     if isinstance(v,list): return '{'+','.join(lua(val) for val in v)+'}'
     return str(v)
 def obj(name,guid,x,y,z,scale=1,color=(1,1,1),nick=''):
-    return dict(Name=name,GUID=guid,Nickname=nick,Transform=dict(posX=x,posY=y,posZ=z,rotX=0,rotY=0,rotZ=0,scaleX=scale,scaleY=scale,scaleZ=scale),ColorDiffuse=dict(zip(('r','g','b'),color)),Locked=False,Grid=False,Snap=True,Autoraise=True,Sticky=False,Tooltip=True,Hands=False)
+    return dict(Name=name,GUID=guid,Nickname=nick,Transform=dict(posX=x,posY=y,posZ=z,rotX=0,rotY=0,rotZ=0,scaleX=scale,scaleY=scale,scaleZ=scale),ColorDiffuse=dict(zip(('r','g','b','a'),[*color,1])),Locked=False,Grid=False,Snap=True,Autoraise=True,Sticky=False,Tooltip=True,Hands=False)
 base='https://igorgabrielserrano.github.io/COMPANION_BANCO_IMOBILIARIO/tabletop/'
 board=obj('Custom_Model','bb0001',0,1,0,nick='Tabuleiro Companion — 40 casas')
 board.update(Locked=True,CustomMesh=dict(MeshURL=base+mesh_name,DiffuseURL=base+image_name,NormalURL='',ColliderURL='',Convex=True,MaterialIndex=3,TypeIndex=4,CastShadows=True))
 objects=[board]
 for i,(name,color) in enumerate(palette.items()):
     off=offsets[name]
-    objects.append(obj('Chess_Pawn',f'aa{i+1:04}',world[0]['x']+off['x'],2,world[0]['z']+off['z'],.55,color,f'Peão {name}'))
+    pawn=obj('Custom_Model',f'aa{i+1:04}',world[0]['x']+off['x'],2,world[0]['z']+off['z'],.75,color,f'Peão {name}')
+    pawn['CustomMesh']=dict(MeshURL=base+pawn_mesh_name,DiffuseURL=base+'peao-branco.png',NormalURL='',ColliderURL='',Convex=True,MaterialIndex=0,TypeIndex=1,CastShadows=True)
+    objects.append(pawn)
 for i in range(2): objects.append(obj('Die_6',f'dd{i+1:04}',-2+i*4,2,5,.9,nick=f'Dado {i+1}'))
 decks,news,card_files=generate_cards(OUT,base,spaces,colors,obj)
 objects.extend(decks)
@@ -145,7 +168,7 @@ save=dict(SaveName='Companion Banco Imobiliário — Mesa v2',GameMode='',Table=
 img.resize((600,600)).save(OUT/'Companion-Tabuleiro.png')
 (OUT/'index.html').write_text('''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Companion — mesa para Tabletop Simulator</title><style>body{margin:0;background:#10273b;color:#edf4f8;font:17px/1.6 system-ui}main{max-width:760px;margin:auto;padding:24px}h1{line-height:1.2}a{color:#86e6c0}img{width:100%;height:auto;border-radius:14px}.download{display:inline-block;padding:12px 20px;border-radius:10px;background:#7ae5b0;color:#10273b;font-weight:700}code{overflow-wrap:anywhere}</style><main><h1>Companion no Tabletop Simulator</h1><p>40 casas, até oito jogadores com peões nomeados, dois dados, 100 Notícias originais e 28 títulos de posse. A parte bancária continua no Companion.</p><p><a class="download" href="Companion-Tabletop.zip">Baixar mesa para Tabletop</a></p><img src="Companion-Tabuleiro.png" alt="Tabuleiro com 40 casas e grupos de propriedades coloridos"><h2>Como abrir</h2><ol><li>Extraia o ZIP.</li><li>Copie <code>Companion-Tabuleiro.json</code> e <code>Companion-Tabuleiro.png</code> para <code>Documentos/My Games/Tabletop Simulator/Saves</code>.</li><li>No Tabletop, abra Games → Save &amp; Load e escolha Companion Banco Imobiliário — Mesa v2.</li><li>Configure a quantidade e os nomes antes de iniciar. Cada jogador escolhe a cor do seu peão. O painel mostra a soma dos dados e avisa quando saem números iguais.</li></ol><p>Para multiplayer, crie uma sala e convide seus amigos no Tabletop. É necessária conexão para carregar o tabuleiro. Turnos, duplas, prisão e pagamentos são controlados pelos jogadores e registrados no aplicativo. O botão Notícias revela uma carta original. Use Search no baralho de títulos para escolher a posse e guardar na mão da sua cor. Aluguéis, construção e hipoteca aguardam os valores oficiais.</p><h2>Novidades da mesa v2</h2><p>Layout azul e faixas coloridas como a referência, texto maior, correção do espelhamento, configuração de jogadores e painel de dados.</p><img src="cartas-preview.png" alt="Duas Notícias originais e um título de posse"><p>A importação, física e orientação corrigida ainda precisam de validação dentro do Tabletop. A mesa não sincroniza automaticamente o dinheiro com o aplicativo.</p><p><a href="../">Abrir o Companion bancário</a> · <a href="https://github.com/IgorGabrielSerrano/COMPANION_BANCO_IMOBILIARIO/blob/main/tabletop/README.md">Instruções completas</a></p></main></html>''',encoding='utf-8')
 with zipfile.ZipFile(OUT/'Companion-Tabletop.zip','w',zipfile.ZIP_DEFLATED) as z:
-    for f in ['Companion-Tabuleiro.json','Companion-Tabuleiro.png',image_name,mesh_name]+card_files:
+    for f in ['Companion-Tabuleiro.json','Companion-Tabuleiro.png',image_name,mesh_name,pawn_mesh_name,'peao-branco.png']+card_files:
         z.write(OUT/f,f)
     z.write(ROOT/'tabletop/README.md','LEIA-ME.md')
 print('Gerado:',OUT)
