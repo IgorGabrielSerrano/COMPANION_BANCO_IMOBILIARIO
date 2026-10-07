@@ -20,7 +20,7 @@
             --border-color: #30363d;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 12px; overflow: hidden; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding: 12px; overflow: hidden; }
         .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; }
         header { text-align: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.15rem; color: var(--accent-gold); }
@@ -51,6 +51,12 @@
         .quick-amounts button { flex: 1; padding: 8px; font-size: 0.8rem; }
         .status-badge { display: inline-block; width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; }
         .status-badge.offline { background: var(--accent-red); }
+        #screen-player { flex: 1; min-height: 0; padding-bottom: calc(88px + env(safe-area-inset-bottom)); overscroll-behavior: contain; scrollbar-width: none; }
+        #screen-player::-webkit-scrollbar, .tx-history::-webkit-scrollbar { display: none; }
+        #screen-player > * { flex-shrink: 0; }
+        #screen-player .tx-history { flex: none; min-height: 140px; max-height: 240px; scrollbar-width: thin; scrollbar-color: #465260 #161b22; }
+        #table-footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px; z-index: 20; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)) !important; background: #0d1117; border-top: 1px solid #30363d; }
+        #table-footer button { min-height: 48px; }
         @keyframes enter-card {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -172,7 +178,7 @@
             </div>
 
             <!-- GESTÃO DA MESA -->
-            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 4px;">
+            <div id="table-footer" style="display: flex; gap: 8px; margin-top: auto; padding-top: 4px;">
                 <button id="btn-end-game" class="btn-red" style="flex:1;" onclick="endGame()">🔴 Finalizar Partida</button>
                 <button style="flex:1; background: #30363d;" onclick="leaveRoom()">🚪 Sair da Mesa</button>
             </div>
