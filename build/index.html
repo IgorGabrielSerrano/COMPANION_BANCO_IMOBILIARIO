@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Companion Banco Imobiliário</title>
+    <!-- PeerJS CDN for WebRTC Realtime Multi-Device Sync -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -11,44 +13,50 @@
             --accent-gold: #f1c40f;
             --accent-green: #2ecc71;
             --accent-red: #e74c3c;
+            --accent-blue: #3498db;
             --text-color: #f0f6fc;
             --subtext: #8b949e;
             --border-color: #30363d;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 16px; overflow: hidden; }
-        .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 14px; }
-        header { text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
-        h1 { font-size: 1.4rem; color: var(--accent-gold); display: flex; align-items: center; justify-content: center; gap: 8px; }
-        p.subtitle { font-size: 0.8rem; color: var(--subtext); margin-top: 4px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; padding: 14px; overflow: hidden; }
+        .container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 12px; }
+        header { text-align: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.2rem; color: var(--accent-gold); }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
         .balance-card { text-align: center; background: linear-gradient(135deg, #161b22 0%, #1c232d 100%); border: 1px solid #38444d; }
         .balance-title { font-size: 0.75rem; color: var(--subtext); text-transform: uppercase; letter-spacing: 1px; }
-        .balance-value { font-size: 2.2rem; font-weight: bold; color: var(--accent-green); margin: 6px 0; }
+        .balance-value { font-size: 2.2rem; font-weight: bold; color: var(--accent-green); margin: 4px 0; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 14px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        button { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         button:active { transform: scale(0.98); opacity: 0.9; }
         .btn-gold { background: linear-gradient(135deg, #f39c12, #d35400); color: #fff; border: none; }
         .btn-green { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; border: none; }
-        .btn-large { grid-column: span 2; padding: 16px; font-size: 1.1rem; }
+        .btn-red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; }
+        .btn-large { grid-column: span 2; padding: 14px; font-size: 1.1rem; }
         .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
         label { font-size: 0.85rem; color: var(--subtext); }
         input, select { background: #0d1117; border: 1px solid var(--border-color); color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; }
-        .tx-history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .tx-item { font-size: 0.85rem; padding: 8px 12px; background: #0d1117; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
+        .tx-history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .tx-item { font-size: 0.82rem; padding: 8px 10px; background: #0d1117; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
+        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #0d1117; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.9rem; }
         .hidden { display: none !important; }
-        /* Modal */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
         .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .quick-amounts { display: flex; gap: 6px; }
         .quick-amounts button { flex: 1; padding: 8px; font-size: 0.8rem; }
+        .status-badge { display: inline-block; width: 10px; height: 10px; background: var(--accent-green); border-radius: 50%; }
+        .status-badge.offline { background: var(--accent-red); }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🏦 BANCO IMOBILIÁRIO</h1>
-            <p class="subtitle">Companion Digital para Tabuleiro Físico</p>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span id="conn-status-badge" class="status-badge"></span>
+                <span id="conn-status-text" style="font-size: 0.75rem; color: var(--subtext);">Offline</span>
+            </div>
         </header>
 
         <!-- LOBBY SCREEN -->
@@ -59,7 +67,7 @@
             </div>
 
             <div id="form-join" class="input-group">
-                <label>PIN da Mesa:</label>
+                <label>PIN da Mesa (4 dígitos):</label>
                 <input type="number" id="join-pin" placeholder="Ex: 7492">
                 <label>Seu Nome:</label>
                 <input type="text" id="join-name" placeholder="Ex: Igor">
@@ -76,10 +84,13 @@
         </div>
 
         <!-- PLAYER DASHBOARD -->
-        <div id="screen-player" class="hidden" style="display: flex; flex-direction: column; gap: 12px; height: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="player-display-name" style="font-weight: bold;">-</span>
-                <span id="room-pin-display" style="color: var(--accent-gold); font-size: 0.9rem;">Mesa #----</span>
+        <div id="screen-player" class="hidden" style="display: flex; flex-direction: column; gap: 10px; height: 100%; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                <div>
+                    <span id="player-display-name" style="font-weight: bold; font-size: 1.05rem;">-</span>
+                    <span id="player-role-badge" style="font-size: 0.75rem; color: var(--accent-gold); margin-left: 4px;"></span>
+                </div>
+                <span id="room-pin-display" style="color: var(--accent-gold); font-weight: bold; font-size: 0.95rem;">Mesa #----</span>
             </div>
 
             <div class="card balance-card">
@@ -95,8 +106,24 @@
                 <button onclick="openModal('RECEIVE_BANK')" style="grid-column: span 2;">💰 Receber do Banco</button>
             </div>
 
+            <!-- JOGADORES NA MESA -->
+            <div class="card" style="padding: 10px;">
+                <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 6px; display:flex; justify-content:space-between;">
+                    <span>👥 Jogadores Conectados na Mesa:</span>
+                    <span id="player-count-label" style="color:var(--accent-gold);">0</span>
+                </div>
+                <div id="players-list-container" style="display: flex; flex-direction: column; gap: 4px;"></div>
+            </div>
+
+            <!-- HISTÓRICO -->
             <div class="card tx-history" id="tx-feed-player">
-                <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa:</div>
+                <div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa em Tempo Real:</div>
+            </div>
+
+            <!-- BOTÕES DE GESTÃO DA PARTIDA -->
+            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 6px;">
+                <button id="btn-end-game" class="btn-red" style="flex:1;" onclick="endGame()">🔴 Finalizar Partida</button>
+                <button style="flex:1; background: #30363d;" onclick="leaveRoom()">🚪 Sair da Mesa</button>
             </div>
         </div>
 
@@ -123,14 +150,49 @@
     </div>
 
     <script>
+        // State
         let state = {
             pin: '',
             playerId: '',
             playerName: '',
-            balance: 25000,
+            isBanker: false,
             players: {},
             transactions: []
         };
+
+        let peer = null;
+        let connections = [];
+        let hostConn = null;
+        const channel = new BroadcastChannel('banco_imobiliario_channel');
+
+        // Restore Session on Page Refresh (F5 / Reload)
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('companion_session');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = parsed;
+                    if (state.pin && state.playerId) {
+                        enterGame(true);
+                        return;
+                    }
+                } catch(e){}
+            }
+        });
+
+        function saveSession() {
+            localStorage.setItem('companion_session', JSON.stringify(state));
+        }
+
+        function clearSession() {
+            localStorage.removeItem('companion_session');
+        }
+
+        function setStatus(text, online = true) {
+            document.getElementById('conn-status-text').innerText = text;
+            const badge = document.getElementById('conn-status-badge');
+            badge.className = 'status-badge' + (online ? '' : ' offline');
+        }
 
         function playSound() {
             try {
@@ -150,7 +212,7 @@
         }
 
         function formatMoney(val) {
-            return 'R$ ' + val.toLocaleString('pt-BR');
+            return 'R$ ' + (val || 0).toLocaleString('pt-BR');
         }
 
         function switchTab(tab) {
@@ -160,42 +222,172 @@
             document.getElementById('btn-tab-create').className = tab === 'create' ? 'btn-gold' : '';
         }
 
+        // Create Room (Host)
         function createRoom() {
-            const banker = document.getElementById('create-banker').value || 'Banqueiro';
+            const banker = document.getElementById('create-banker').value.trim() || 'Banqueiro';
             const cash = parseInt(document.getElementById('create-cash').value) || 25000;
+
             state.pin = Math.floor(1000 + Math.random() * 9000).toString();
-            state.playerId = 'p_banker';
-            state.playerName = banker + ' (Banqueiro)';
-            state.balance = cash;
-            state.players[state.playerId] = { name: state.playerName, balance: cash };
+            state.playerId = 'p_banker_' + Date.now();
+            state.playerName = banker;
+            state.isBanker = true;
+            state.players = {};
+            state.transactions = [];
+
+            state.players[state.playerId] = { name: banker + ' (Banqueiro)', balance: cash, isBanker: true };
+
+            initHostPeer();
             enterGame();
         }
 
+        // Join Room
         function joinRoom() {
-            const pin = document.getElementById('join-pin').value;
-            const name = document.getElementById('join-name').value;
-            if (!pin || !name) return alert('Preencha o PIN e seu nome!');
+            const pin = document.getElementById('join-pin').value.trim();
+            const name = document.getElementById('join-name').value.trim();
+            if (!pin || !name) return alert('Preencha o PIN da mesa e seu nome!');
+
             state.pin = pin;
             state.playerId = 'p_' + Date.now();
             state.playerName = name;
-            state.balance = 25000;
-            state.players[state.playerId] = { name: name, balance: 25000 };
+            state.isBanker = false;
+
+            if (!state.players[state.playerId]) {
+                state.players[state.playerId] = { name: name, balance: 25000, isBanker: false };
+            }
+
+            initClientPeer();
             enterGame();
         }
 
-        function enterGame() {
+        function enterGame(isRestored = false) {
             document.getElementById('screen-lobby').classList.add('hidden');
             document.getElementById('screen-player').classList.remove('hidden');
             document.getElementById('player-display-name').innerText = state.playerName;
+            document.getElementById('player-role-badge').innerText = state.isBanker ? '👑 (Banqueiro)' : '';
             document.getElementById('room-pin-display').innerText = 'Mesa #' + state.pin;
+            document.getElementById('btn-end-game').style.display = state.isBanker ? 'block' : 'none';
+
+            saveSession();
             updateUI();
+
+            if (isRestored) {
+                if (state.isBanker) initHostPeer();
+                else initClientPeer();
+            }
+
+            // Setup local tab synchronization
+            channel.onmessage = (e) => {
+                if (e.data && e.data.pin === state.pin) {
+                    state.players = e.data.players;
+                    state.transactions = e.data.transactions;
+                    saveSession();
+                    updateUI();
+                }
+            };
+        }
+
+        // PeerJS Host Connection
+        function initHostPeer() {
+            const hostId = 'banco-imobiliario-room-' + state.pin;
+            peer = new Peer(hostId);
+
+            peer.on('open', () => setStatus('Online (Mesa ' + state.pin + ')'));
+
+            peer.on('connection', (conn) => {
+                connections.push(conn);
+                conn.on('data', (data) => {
+                    handleIncomingData(data);
+                    broadcastState();
+                });
+                conn.on('open', () => broadcastState());
+            });
+
+            peer.on('error', (err) => {
+                // If ID taken, reconnect
+                setStatus('Sincronizado Local', true);
+            });
+        }
+
+        // PeerJS Client Connection
+        function initClientPeer() {
+            peer = new Peer();
+            peer.on('open', () => {
+                const hostId = 'banco-imobiliario-room-' + state.pin;
+                hostConn = peer.connect(hostId);
+                
+                hostConn.on('open', () => {
+                    setStatus('Conectado à Mesa #' + state.pin);
+                    sendToHost({ type: 'JOIN', player: { id: state.playerId, data: state.players[state.playerId] } });
+                });
+
+                hostConn.on('data', (data) => handleIncomingData(data));
+                hostConn.on('error', () => setStatus('Conexão Local', true));
+            });
+        }
+
+        function sendToHost(msg) {
+            if (hostConn && hostConn.open) {
+                hostConn.send(msg);
+            }
+            channel.postMessage({ pin: state.pin, players: state.players, transactions: state.transactions });
+        }
+
+        function broadcastState() {
+            saveSession();
+            channel.postMessage({ pin: state.pin, players: state.players, transactions: state.transactions });
+            connections.forEach(c => {
+                if (c.open) {
+                    c.send({ type: 'SYNC', players: state.players, transactions: state.transactions });
+                }
+            });
+        }
+
+        function handleIncomingData(data) {
+            if (data.type === 'SYNC') {
+                state.players = data.players;
+                state.transactions = data.transactions;
+                saveSession();
+                updateUI();
+            } else if (data.type === 'JOIN') {
+                state.players[data.player.id] = data.player.data;
+                broadcastState();
+                updateUI();
+            } else if (data.type === 'TRANSFER') {
+                const tx = data.tx;
+                if (state.players[tx.fromId]) state.players[tx.fromId].balance -= tx.amount;
+                if (state.players[tx.toId]) state.players[tx.toId].balance += tx.amount;
+                state.transactions.push(tx);
+                broadcastState();
+                updateUI();
+            }
         }
 
         function updateUI() {
-            document.getElementById('balance-amount').innerText = formatMoney(state.balance);
+            const myData = state.players[state.playerId] || { balance: 25000 };
+            document.getElementById('balance-amount').innerText = formatMoney(myData.balance);
+            
+            // Update players count & list
+            const pKeys = Object.keys(state.players);
+            document.getElementById('player-count-label').innerText = pKeys.length;
+            
+            const plist = document.getElementById('players-list-container');
+            plist.innerHTML = '';
+            
+            pKeys.forEach(pId => {
+                const p = state.players[pId];
+                const row = document.createElement('div');
+                row.className = 'player-row';
+                row.innerHTML = `
+                    <span>${p.name} ${pId === state.playerId ? ' <b>(Você)</b>' : ''}</span>
+                    <span style="color:var(--accent-green);font-weight:bold;">${formatMoney(p.balance)}</span>
+                `;
+                plist.appendChild(row);
+            });
+
+            // Update transactions feed
             const feed = document.getElementById('tx-feed-player');
-            feed.innerHTML = '<div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa:</div>';
-            state.transactions.slice().reverse().forEach(tx => {
+            feed.innerHTML = '<div style="font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px;">📜 Histórico da Mesa em Tempo Real:</div>';
+            (state.transactions || []).slice().reverse().forEach(tx => {
                 const item = document.createElement('div');
                 item.className = 'tx-item';
                 item.innerText = `${tx.from} ➔ ${tx.to}: ${formatMoney(tx.amount)} ${tx.note ? '('+tx.note+')' : ''}`;
@@ -204,10 +396,19 @@
         }
 
         function passGO() {
-            state.balance += 2000;
-            state.transactions.push({ from: '🏦 Banco', to: state.playerName, amount: 2000, note: 'Passou no Ponto de Partida' });
+            if (!state.players[state.playerId]) return;
+            state.players[state.playerId].balance += 2000;
+            const tx = {
+                from: '🏦 Banco',
+                to: state.playerName,
+                amount: 2000,
+                note: 'Passou no Ponto de Partida'
+            };
+            state.transactions.push(tx);
             playSound();
             updateUI();
+            if (state.isBanker) broadcastState();
+            else sendToHost({ type: 'TRANSFER', tx: tx });
         }
 
         let currentModalMode = '';
@@ -219,9 +420,22 @@
             document.getElementById('modal-note').value = '';
             
             if (mode === 'PAY_PLAYER') {
-                document.getElementById('modal-title').innerText = '💸 Pagar Jogador';
+                document.getElementById('modal-title').innerText = '💸 Pagar a um Jogador';
                 select.classList.remove('hidden');
-                select.innerHTML = '<option value="Outro Jogador">Outro Jogador Mesa #' + state.pin + '</option>';
+                select.innerHTML = '';
+                
+                Object.keys(state.players).forEach(pId => {
+                    if (pId !== state.playerId) {
+                        const opt = document.createElement('option');
+                        opt.value = pId;
+                        opt.innerText = state.players[pId].name;
+                        select.appendChild(opt);
+                    }
+                });
+
+                if (select.children.length === 0) {
+                    select.innerHTML = '<option value="">(Nenhum outro jogador na mesa)</option>';
+                }
             } else if (mode === 'PAY_BANK') {
                 document.getElementById('modal-title').innerText = '🏦 Pagar ao Banco';
                 select.classList.add('hidden');
@@ -242,24 +456,82 @@
 
         function confirmTransfer() {
             const amount = parseInt(document.getElementById('modal-amount').value);
-            const note = document.getElementById('modal-note').value;
+            const note = document.getElementById('modal-note').value.trim();
             if (!amount || amount <= 0) return alert('Informe um valor válido!');
-            
+
+            const myData = state.players[state.playerId];
+            if (!myData) return;
+
             if (currentModalMode === 'PAY_PLAYER') {
-                if (state.balance < amount) return alert('Saldo insuficiente!');
-                state.balance -= amount;
-                state.transactions.push({ from: state.playerName, to: 'Outro Jogador', amount, note });
+                const select = document.getElementById('modal-recipient');
+                const targetId = select.value;
+                if (!targetId || !state.players[targetId]) return alert('Selecione um jogador válido!');
+                if (myData.balance < amount) return alert('Saldo insuficiente!');
+
+                myData.balance -= amount;
+                state.players[targetId].balance += amount;
+
+                const tx = {
+                    fromId: state.playerId,
+                    toId: targetId,
+                    from: state.playerName,
+                    to: state.players[targetId].name,
+                    amount: amount,
+                    note: note
+                };
+
+                state.transactions.push(tx);
+                if (state.isBanker) broadcastState();
+                else sendToHost({ type: 'TRANSFER', tx: tx });
             } else if (currentModalMode === 'PAY_BANK') {
-                if (state.balance < amount) return alert('Saldo insuficiente!');
-                state.balance -= amount;
-                state.transactions.push({ from: state.playerName, to: '🏦 Banco', amount, note: note || 'Pagamento ao Banco' });
+                if (myData.balance < amount) return alert('Saldo insuficiente!');
+                myData.balance -= amount;
+                const tx = {
+                    fromId: state.playerId,
+                    toId: 'BANK',
+                    from: state.playerName,
+                    to: '🏦 Banco',
+                    amount: amount,
+                    note: note || 'Pagamento ao Banco'
+                };
+                state.transactions.push(tx);
+                if (state.isBanker) broadcastState();
+                else sendToHost({ type: 'TRANSFER', tx: tx });
             } else if (currentModalMode === 'RECEIVE_BANK') {
-                state.balance += amount;
-                state.transactions.push({ from: '🏦 Banco', to: state.playerName, amount, note: note || 'Recebido do Banco' });
+                myData.balance += amount;
+                const tx = {
+                    fromId: 'BANK',
+                    toId: state.playerId,
+                    from: '🏦 Banco',
+                    to: state.playerName,
+                    amount: amount,
+                    note: note || 'Recebido do Banco'
+                };
+                state.transactions.push(tx);
+                if (state.isBanker) broadcastState();
+                else sendToHost({ type: 'TRANSFER', tx: tx });
             }
+
             playSound();
             closeModal();
             updateUI();
+        }
+
+        function leaveRoom() {
+            if (confirm('Deseja sair da mesa atual?')) {
+                clearSession();
+                location.reload();
+            }
+        }
+
+        function endGame() {
+            if (confirm('Tem certeza que deseja FINALIZAR A PARTIDA para todos?')) {
+                clearSession();
+                if (state.isBanker) {
+                    broadcastState();
+                }
+                location.reload();
+            }
         }
     </script>
 </body>
