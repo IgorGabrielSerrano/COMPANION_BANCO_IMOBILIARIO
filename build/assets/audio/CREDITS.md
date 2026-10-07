@@ -1,19 +1,16 @@
-# Coin sound assets
+# Coin audio
 
-All source recordings are released under CC0 1.0:
-https://creativecommons.org/publicdomain/zero/1.0/
+Source: `magiaz-moedas-446088.mp3`, provided by the project owner on 2026-10-07.
+The owner requested this asset replace the previous recordings. No new license
+claim is made for the supplied audio.
 
-- `coin-tick-a.wav`, `coin-tick-b.wav`, `coin-jingle.wav`: excerpts from
-  “coin sounds” by syncopika, recorded using real coins.
-  Source: https://opengameart.org/content/coin-sounds
-  Original: https://opengameart.org/sites/default/files/coinsounds011015.wav
-  Edits: excerpt selection, mono conversion, removal of DC offset,
-  peak normalization and short fades at both boundaries.
-- `coin-drop.wav`: excerpt from “Coin Drop” by Vinrax.
-  Source: https://opengameart.org/content/coin-drop
-  Original: https://opengameart.org/sites/default/files/coin_drop.wav
-  Edits: leading/trailing silence trimmed, mono conversion, removal of DC
-  offset, peak normalization and short fades at both boundaries.
+All four WAV files are edited excerpts of that source:
 
-These files are hosted with the application; runtime playback does not
-depend on OpenGameArt availability.
+- coin-tick-a.wav: brighter/faster coin sequence; loops during gains.
+- coin-tick-b.wav: lower coin sequence; loops during spending.
+- coin-jingle.wav: short higher-pitched gain finale.
+- coin-drop.wav: lower, slower spending finale.
+
+Edits: selection of excerpts, pitch/speed changes, moderate gain, and short
+fade-in/fade-out envelopes. Playback also fades out when interrupted or muted.
+The audio is hosted locally alongside the game.

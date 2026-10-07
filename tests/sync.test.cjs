@@ -9,6 +9,7 @@ const peers = [];
 const queue = [];
 function page() {
     const elements = new Map();
+    const storage = new Map();
     let now = 0, nextFrame = 0;
     const frames = new Map();
     const element = () => ({ value: '', innerHTML: '', style: {}, children: [], classList: {
@@ -20,7 +21,7 @@ function page() {
         requestAnimationFrame: callback => { frames.set(++nextFrame, callback); return nextFrame; },
         cancelAnimationFrame: id => frames.delete(id),
         window: { addEventListener() {} },
-        localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+        localStorage: { getItem(key) { return storage.get(key) ?? null; }, setItem(key, value) { storage.set(key, value); }, removeItem(key) { storage.delete(key); } },
         alert: msg => { throw new Error(msg); }, confirm: () => true,
         document: { getElementById(id) {
             if (!elements.has(id)) elements.set(id, element());
@@ -135,8 +136,34 @@ console.log('OK: cores compartilhadas, venda negociada, hipoteca a 50%, comandos
 alice.run('leaveRoom()'); flush();
 assert.equal(host.run("'alice' in state.players"), false);
 assert.equal(bob.run("'alice' in state.players"), false);
+// Rejoin by normalized name restores the same identity and game data.
+host.run(`state.departedPlayers.alice.properties = [{ id: 'restored-property', name: 'Avenida', price: 3000, rent: 500 }];
+    state.departedPlayers.alice.jailed = true; state.departedPlayers.alice.jailRounds = 2;`);
+alice.run(`state = { pin: '1234', playerId: 'new-alice', playerName: '  ALICE  ', isBanker: false,
+    players: { 'new-alice': { name: '  ALICE  ', balance: 25000, properties: [] } }, transactions: [] };
+    enterGame(); sendToHost({ type: 'JOIN', player: { id: state.playerId, data: state.players[state.playerId] } });`); flush();
+assert.equal(alice.run('state.playerId'), 'alice');
+assert.equal(alice.run('state.players.alice.balance'), 14500);
+assert.equal(alice.run('state.players.alice.properties[0].id'), 'restored-property');
+assert.equal(alice.run('state.players.alice.jailRounds'), 2);
+assert.equal(host.run("'alice' in state.departedPlayers"), false);
+// A repeat JOIN after reconnecting must not reset the restored balance.
+alice.run(`sendToHost({ type: 'JOIN', player: { id: state.playerId, data: state.players[state.playerId] } });`); flush();
+assert.equal(alice.run('state.players.alice.balance'), 14500);
+host.run('leaveRoom()'); flush();
+assert.equal(host.run('state.pin'), '');
+assert.equal(bob.run('state.pin'), '1234');
+host.run(`Peer = class { on() {} destroy() {} }; document.getElementById('join-pin').value = '1234';
+    document.getElementById('join-name').value = 'host'; joinRoom();`); flush();
+assert.equal(host.run('state.isBanker'), true);
+assert.equal(host.run('state.playerId'), 'host');
+assert.equal(host.run('state.players.alice.balance'), 14500);
 host.run('endGame()'); flush();
 assert.equal(bob.run('state.pin'), '');
+assert.equal(alice.run('state.pin'), '');
+assert.equal(host.run('state.departedPlayers'), undefined);
+assert.equal(host.run("savedHostRooms()['1234']"), undefined);
+console.log('OK: saída remove jogador, retorno pelo nome restaura identidade/saldo/posses/prisão e encerramento apaga recuperação.');
 console.log('OK: compra, bônus, pagamento, deduplicação, cadeia, saída e encerramento em três sessões.');
 
 const animated = page();

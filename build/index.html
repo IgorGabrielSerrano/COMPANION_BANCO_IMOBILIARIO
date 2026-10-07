@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Companion Banco Imobiliário</title>
+    <link rel="icon" href="game/index.icon.png" type="image/png">
     <!-- PeerJS CDN for WebRTC Realtime Multi-Device Sync -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -57,6 +58,13 @@
         #screen-player .tx-history { flex: none; min-height: 140px; max-height: 240px; scrollbar-width: thin; scrollbar-color: #465260 #161b22; }
         #table-footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px; z-index: 20; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)) !important; background: #0d1117; border-top: 1px solid #30363d; }
         #table-footer button { min-height: 48px; }
+        #godot-game { position:fixed; inset:0; width:100%; height:100%; border:0; z-index:30; opacity:0; pointer-events:none; background:#091219; }
+        body.godot-ready #godot-game { opacity:1; pointer-events:auto; }
+        body.godot-ready .container > header, body.godot-ready #screen-lobby, body.godot-ready #screen-player { display:none !important; }
+        body.godot-ready .modal { z-index:100; backdrop-filter:blur(12px); background:rgba(5,15,22,0.78); }
+        body.godot-ready .modal-content { background:#14262e; border-color:#35554f; box-shadow:0 24px 90px #0008; }
+        body.godot-ready input, body.godot-ready select { min-height:48px; background:#0d2028; }
+        body.godot-ready button { min-height:48px; }
         @keyframes enter-card {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -294,6 +302,7 @@
         </div>
     </div>
 
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -323,6 +332,35 @@
         const clientId = crypto.randomUUID();
         const channel = new BroadcastChannel('banco_imobiliario_channel');
 
+        window.companionReady = () => document.body.classList.add('godot-ready');
+        window.companionView = () => JSON.stringify({ state,
+            status: document.getElementById('conn-status-text').innerText,
+            sound: soundEnabled, reducedMotion: reducedMotion() });
+        window.companionAction = (action, payload = {}) => {
+            unlockMoneyAudio();
+            const index = Number(payload.index);
+            switch (action) {
+                case 'CREATE':
+                    document.getElementById('create-banker').value = String(payload.name || '').trim();
+                    document.getElementById('create-cash').value = String(payload.cash || '25000');
+                    createRoom(); break;
+                case 'JOIN':
+                    document.getElementById('join-name').value = String(payload.name || '').trim();
+                    document.getElementById('join-pin').value = String(payload.pin || '').trim();
+                    joinRoom(); break;
+                case 'GO': passGO(); break;
+                case 'SOUND': toggleMoneySound(); break;
+                case 'PAY_PLAYER': case 'PAY_BANK': case 'RECEIVE_BANK': openModal(action); break;
+                case 'BUY': openPropertyModal(); break;
+                case 'EDIT': editProperty(index); break;
+                case 'SELL': openTransferModal(index); break;
+                case 'MORTGAGE': deleteProperty(index); break;
+                case 'JAIL': jailAction(payload.action); break;
+                case 'LEAVE': leaveRoom(); break;
+                case 'END': endGame(); break;
+            }
+        };
+
         // Restore Session on Page Refresh
         window.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('companion_session');
@@ -340,6 +378,16 @@
 
         function saveSession() {
             localStorage.setItem('companion_session', JSON.stringify(state));
+            if (state.isBanker && state.pin) {
+                const rooms = savedHostRooms();
+                rooms[state.pin] = state;
+                localStorage.setItem('companion_host_rooms', JSON.stringify(rooms));
+            }
+        }
+
+        function savedHostRooms() {
+            try { return JSON.parse(localStorage.getItem('companion_host_rooms') || '{}'); }
+            catch (_) { return {}; }
         }
 
         function clearSession() {
@@ -374,7 +422,13 @@
 
         function stopMoneySounds() {
             for (const source of activeMoneySounds) {
-                try { source.stop(); } catch (_) {}
+                try {
+                    const now = moneyAudio.currentTime;
+                    source.moneyGain?.gain.cancelScheduledValues?.(now);
+                    source.moneyGain?.gain.setValueAtTime?.(source.moneyGain.gain.value, now);
+                    source.moneyGain?.gain.linearRampToValueAtTime?.(0, now + 0.04);
+                    source.stop(now + 0.05);
+                } catch (_) {}
             }
             activeMoneySounds.clear();
         }
@@ -396,6 +450,9 @@
         // Browsers require a gesture before playing sounds, including remote payments.
         window.addEventListener('pointerdown', unlockMoneyAudio);
         window.addEventListener('keydown', unlockMoneyAudio);
+        window.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopMoneySounds();
+        });
 
         function toggleMoneySound() {
             soundEnabled = !soundEnabled;
@@ -411,12 +468,14 @@
             button.setAttribute('aria-pressed', String(soundEnabled));
         }
 
-        function playMoneySample(name, volume = 0.3, rate = 1) {
+        function playMoneySample(name, volume = 0.3, rate = 1, loop = false) {
             if (!soundEnabled || !moneyAudio || moneyAudio.state !== 'running' || !moneyBuffers[name]) return;
             try {
                 const source = moneyAudio.createBufferSource();
                 const gain = moneyAudio.createGain();
                 source.buffer = moneyBuffers[name];
+                source.loop = loop;
+                source.moneyGain = gain;
                 source.playbackRate.value = rate;
                 gain.gain.value = volume;
                 source.connect(gain);
@@ -463,8 +522,7 @@
             const version = balanceAnimationVersion;
             const start = performance.now();
             const duration = Math.min(1800, 900 + Math.abs(target - from) / 20);
-            let lastCoin = -Infinity;
-            let coinIndex = 0;
+
             const frame = now => {
                 if (version !== balanceAnimationVersion) return;
                 const progress = Math.min(1, Math.max(0, (now - start) / duration));
@@ -472,9 +530,8 @@
                 displayedBalance = Math.round(from + (target - from) * eased);
                 label.innerText = formatMoney(displayedBalance);
                 if (progress < 1) {
-                    if (now - lastCoin >= 160) {
-                        playMoneySample(coinIndex++ % 2 ? 'tickB' : 'tickA', increasing ? 0.22 : 0.16, 0.96 + (coinIndex % 3) * 0.04);
-                        lastCoin = now;
+                    if (activeMoneySounds.size === 0) {
+                        playMoneySample(increasing ? 'tickA' : 'tickB', increasing ? 0.34 : 0.26, 1, true);
                     }
                     balanceFrame = requestAnimationFrame(frame);
                 } else {
@@ -510,6 +567,7 @@
             state.players = {};
             state.transactions = [];
             state.startingCash = cash;
+            state.departedPlayers = {};
 
             state.players[state.playerId] = {
                 name: banker + ' (Banqueiro)',
@@ -527,6 +585,13 @@
             const pin = document.getElementById('join-pin').value.trim();
             const name = document.getElementById('join-name').value.trim();
             if (!pin || !name) return alert('Preencha o PIN da mesa e seu nome!');
+            const savedHost = savedHostRooms()[pin];
+            if (savedHost && normalizePlayerName(savedHost.playerName) === normalizePlayerName(name)) {
+                state = savedHost;
+                initHostPeer();
+                enterGame();
+                return;
+            }
 
             state.pin = pin;
             state.playerId = 'p_' + Date.now();
@@ -573,7 +638,7 @@
 
             channel.onmessage = ({data}) => {
                 if (!data || data.pin !== state.pin || data.sender === clientId) return;
-                if (data.type === 'SYNC' && !state.isBanker) handleIncomingData(data);
+                if ((data.type === 'SYNC' || data.type === 'JOINED') && !state.isBanker) handleIncomingData(data);
                 else if (data.type === 'COMMAND' && state.isBanker) handleIncomingData(data.command);
                 else if (data.type === 'END') resetRoom();
             };
@@ -641,6 +706,19 @@
         function handleIncomingData(data) {
             if (!data || typeof data !== 'object') return;
             if (data.type === 'END') return resetRoom();
+            if (data.type === 'JOINED') {
+                if (state.isBanker || data.requestedId !== state.playerId || !data.players?.[data.assignedId]) return;
+                state.playerId = data.assignedId;
+                state.playerName = data.players[data.assignedId].name;
+                state.players = data.players;
+                state.transactions = data.transactions || [];
+                receivedInitialState = true;
+                document.getElementById('player-display-name').innerText = state.playerName;
+                setStatus('Conectado à Mesa #' + state.pin);
+                saveSession();
+                updateUI();
+                return;
+            }
             if (data.type === 'SYNC') {
                 if (state.isBanker) return;
                 if (!data.players || !data.players[state.playerId]) {
@@ -659,15 +737,32 @@
             if (data.commandId) handledCommands.add(data.commandId);
             const actor = state.players[data.actorId];
             if (data.type === 'JOIN') {
-                if (!data.player || data.player.id !== data.actorId) return;
-                if (!state.players[data.player.id]) {
+                if (!data.player?.data?.name || data.player.id !== data.actorId) return;
+                const normalizedName = normalizePlayerName(data.player.data.name);
+                state.departedPlayers ||= {};
+                let assignedId = Object.keys(state.players).find(id => !state.players[id].isBanker && normalizePlayerName(state.players[id].name) === normalizedName);
+                if (!assignedId) {
+                    assignedId = Object.keys(state.departedPlayers).find(id => normalizePlayerName(state.departedPlayers[id].name) === normalizedName);
+                    if (assignedId) {
+                        state.players[assignedId] = state.departedPlayers[assignedId];
+                        delete state.departedPlayers[assignedId];
+                    }
+                }
+                assignedId ||= data.player.id;
+                if (!state.players[assignedId]) {
                     const banker = Object.values(state.players).find(p => p.isBanker);
-                    state.players[data.player.id] = { name: data.player.data.name,
+                    state.players[assignedId] = { name: data.player.data.name.trim(),
                         balance: banker ? (state.startingCash || 25000) : 25000,
                         isBanker: false, properties: [], jailed: false, jailRounds: 0 };
                 }
+                const acknowledgement = { type: 'JOINED', pin: state.pin, sender: clientId,
+                    requestedId: data.player.id, assignedId, players: state.players, transactions: state.transactions };
+                channel.postMessage(acknowledgement);
+                connections.forEach(c => { if (c.open) c.send(acknowledgement); });
             } else if (!actor) return;
             else if (data.type === 'LEAVE') {
+                state.departedPlayers ||= {};
+                state.departedPlayers[data.actorId] = actor;
                 delete state.players[data.actorId];
             } else if (data.type === 'TRANSFER' || data.type === 'BUY_PROPERTY') {
                 const tx = data.tx;
@@ -743,6 +838,10 @@
 
         function jailAction(action) {
             sendToHost({ type: 'JAIL', action });
+        }
+
+        function normalizePlayerName(name) {
+            return String(name).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
         }
 
         function resetRoom() {
@@ -1134,7 +1233,11 @@
 
         function leaveRoom() {
             if (!confirm('Deseja sair da mesa atual?')) return;
-            if (state.isBanker) return finishRoom();
+            if (state.isBanker) {
+                saveSession();
+                resetRoom();
+                return;
+            }
             sendToHost({ type: 'LEAVE' });
             resetRoom();
         }
@@ -1144,6 +1247,9 @@
         }
 
         function finishRoom() {
+            const rooms = savedHostRooms();
+            delete rooms[state.pin];
+            localStorage.setItem('companion_host_rooms', JSON.stringify(rooms));
             const msg = { type: 'END', pin: state.pin, sender: clientId };
             channel.postMessage(msg);
             connections.forEach(c => { if (c.open) c.send(msg); });
