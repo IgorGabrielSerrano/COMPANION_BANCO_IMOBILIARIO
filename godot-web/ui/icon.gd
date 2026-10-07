@@ -5,13 +5,15 @@ extends Control
 @export var tint: Color = Color("#f2d080")
 @export var spin: bool = false
 var phase: float = 0.0
+const COIN_TURN_SPEED := 1.4
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _process(delta: float) -> void:
 	if spin:
-		phase += delta * 2.0
+		# A shared clock keeps the rotation continuous when a panel is rebuilt.
+		phase = fposmod(Time.get_ticks_usec() / 1000000.0 * COIN_TURN_SPEED, TAU)
 		queue_redraw()
 
 func line(points: Array) -> void:
@@ -23,11 +25,14 @@ func _draw() -> void:
 	draw_set_transform(offset, 0, Vector2.ONE * factor)
 	match kind:
 		"coin":
-			var width := maxf(0.22, absf(cos(phase))) if spin else 1.0
-			draw_set_transform(offset + Vector2(14, 14)*factor, 0, Vector2(width, 1)*factor)
+			# Rounded thickness avoids the flat pause produced by clamping the edge.
+			var face := cos(phase)
+			var width := sqrt(0.0121 + 0.9879 * face * face) if spin else 1.0
+			var tilt := sin(phase) * 0.035 if spin else 0.0
+			draw_set_transform(offset + Vector2(14, 14)*factor, tilt, Vector2(width, 1)*factor)
 			draw_circle(Vector2.ZERO, 11, Color(tint, 0.12))
-			draw_arc(Vector2.ZERO, 11, 0, TAU, 40, tint, 2, true)
-			draw_arc(Vector2.ZERO, 8, 0, TAU, 40, Color(tint, 0.45), 1, true)
+			draw_arc(Vector2.ZERO, 11, 0, TAU, 64, tint, 2, true)
+			draw_arc(Vector2.ZERO, 8, 0, TAU, 64, Color(tint, 0.45), 1, true)
 			line([Vector2(3,-5), Vector2(-3,-5), Vector2(-3,0), Vector2(3,0), Vector2(3,5), Vector2(-3,5)])
 			line([Vector2(0,-7), Vector2(0,7)])
 		"bank":
