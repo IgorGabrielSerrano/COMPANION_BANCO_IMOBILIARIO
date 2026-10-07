@@ -555,7 +555,7 @@ func _render_history() -> void:
 	body.add_child(_label("Histórico da mesa",23,"text",true))
 	var txs: Array = snapshot.get("transactions",[])
 	body.add_child(_label("%d movimentações" % txs.size(),12,"muted"))
-	if snapshot.get("isBanker",false): body.add_child(_label("Desfazer restaura dinheiro e posses. Disponível para ações registradas a partir desta versão.",12,"muted"))
+	if snapshot.get("isBanker",false): body.add_child(_label("Toque para revisar uma ação ou selecione várias. Alterações antigas de posses sem registro de reversão continuam apenas para consulta.",12,"muted"))
 	var valid_ids := {}
 	for tx in txs:
 		if tx.has("undo") and not tx.get("undone",false): valid_ids[str(tx.id)] = true

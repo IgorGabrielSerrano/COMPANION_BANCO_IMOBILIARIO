@@ -77,7 +77,9 @@ confirmation previews each player's net balance change. Batches are simulated
 newest-first on a clone and applied only when every selected action is valid.
 Property dependencies and insufficient reversal balances require undoing the
 later related action first. Undone entries remain marked in history. Legacy
-entries without inverse data remain visible but cannot be fully reverted.
+property entries without inverse data remain visible but cannot be fully
+reverted. Legacy monetary transfers with valid payer/recipient identifiers
+are migrated to balance-only inverse patches when the banker restores a room.
 
 Browser QA uses Playwright iPhone 11–17 viewport profiles, including heights
 with browser controls visible, with all four skins. This is viewport and touch
