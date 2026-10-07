@@ -218,7 +218,7 @@
                 <label id="lbl-buy-price">Preço de Compra (Pago ao Banco 🏦):</label>
                 <input type="number" id="prop-price-input" placeholder="Ex: 3500">
 
-                <label for="prop-color-input">Cor do grupo da posse:</label>
+                <label for="prop-color-input">Cor do grupo da posse (Super Banco Imobiliário):</label>
                 <select id="prop-color-input" onchange="previewPropertyColor()"></select>
                 <div id="prop-color-preview" class="property-chip">🏠 Cor do texto da posse</div>
 
@@ -301,8 +301,8 @@
         let previousVisualState = null;
         const PROPERTY_COLORS = {
             '#f1c40f': 'Amarelo', '#ed7272': 'Vermelho', '#67c587': 'Verde',
-            '#6b9fff': 'Azul', '#80d8ef': 'Azul-claro', '#f6a04d': 'Laranja',
-            '#c39bf2': 'Roxo', '#ef91c7': 'Rosa', '#bc946e': 'Marrom', '#ecf0f1': 'Branco / Companhia'
+            '#6b9fff': 'Azul', '#f6a04d': 'Laranja',
+            '#c39bf2': 'Roxo', '#ef91c7': 'Rosa', '#ecf0f1': 'Neutro / Companhia'
         };
         function propertyColor(color) { return Object.hasOwn(PROPERTY_COLORS, color) ? color : '#f1c40f'; }
         function escapeHtml(text) {
