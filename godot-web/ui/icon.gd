@@ -1,13 +1,13 @@
+@tool
 extends Control
 
-var kind: String = "coin"
-var tint: Color = Color("#f2d080")
-var spin: bool = false
+@export var kind: String = "coin"
+@export var tint: Color = Color("#f2d080")
+@export var spin: bool = false
 var phase: float = 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(28, 28)
 
 func _process(delta: float) -> void:
 	if spin:
@@ -18,12 +18,13 @@ func line(points: Array) -> void:
 	draw_polyline(PackedVector2Array(points), tint, 1.8, true)
 
 func _draw() -> void:
-	var offset := (size - Vector2(28, 28)) / 2.0
-	draw_set_transform(offset)
+	var factor := minf(size.x / 28, size.y / 28)
+	var offset := (size - Vector2(28, 28) * factor) / 2.0
+	draw_set_transform(offset, 0, Vector2.ONE * factor)
 	match kind:
 		"coin":
 			var width := maxf(0.22, absf(cos(phase))) if spin else 1.0
-			draw_set_transform(offset + Vector2(14, 14), 0, Vector2(width, 1))
+			draw_set_transform(offset + Vector2(14, 14)*factor, 0, Vector2(width, 1)*factor)
 			draw_circle(Vector2.ZERO, 11, Color(tint, 0.12))
 			draw_arc(Vector2.ZERO, 11, 0, TAU, 40, tint, 2, true)
 			draw_arc(Vector2.ZERO, 8, 0, TAU, 40, Color(tint, 0.45), 1, true)
@@ -71,6 +72,10 @@ func _draw() -> void:
 			draw_arc(Vector2(14,14),11,-0.9,0.9,20,tint,1.8,true)
 		"edit":
 			line([Vector2(5,23),Vector2(7,16),Vector2(20,3),Vector2(25,8),Vector2(12,21),Vector2(5,23)])
+		"settings":
+			for y in [7,14,21]: line([Vector2(3,y),Vector2(25,y)])
+			for p in [Vector2(10,7),Vector2(19,14),Vector2(8,21)]:
+				draw_circle(p,3,tint)
 		_:
 			line([Vector2(14,5),Vector2(14,23)])
 			line([Vector2(5,14),Vector2(23,14)])

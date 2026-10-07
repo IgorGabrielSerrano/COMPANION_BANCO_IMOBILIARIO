@@ -16,14 +16,14 @@ function page() {
         add() {}, remove() {}, toggle() {}, contains() { return true; }
     }, appendChild() {}, setAttribute() {} });
     const context = vm.createContext({
-        crypto: { randomUUID }, console, setTimeout: fn => fn(),
+        crypto: { randomUUID }, console, URLSearchParams, location: { search: '' }, setTimeout: fn => fn(),
         performance: { now: () => now },
         requestAnimationFrame: callback => { frames.set(++nextFrame, callback); return nextFrame; },
         cancelAnimationFrame: id => frames.delete(id),
         window: { addEventListener() {} },
         localStorage: { getItem(key) { return storage.get(key) ?? null; }, setItem(key, value) { storage.set(key, value); }, removeItem(key) { storage.delete(key); } },
         alert: msg => { throw new Error(msg); }, confirm: () => true,
-        document: { getElementById(id) {
+        document: { body: { dataset: {}, style: { setProperty() {} } }, getElementById(id) {
             if (!elements.has(id)) elements.set(id, element());
             return elements.get(id);
         }, createElement: element, querySelectorAll: () => [] },
@@ -54,6 +54,18 @@ for (const [app, id] of [[alice, 'alice'], [bob, 'bob']]) {
     flush();
 }
 assert.equal(alice.run('state.players.alice.balance'), 10000);
+const beforeThemes = host.run('JSON.stringify(state)');
+host.run("chooseBankTheme('mu')");
+alice.run("chooseBankTheme('new')");
+host.run('broadcastState()'); flush();
+assert.equal(host.run('chosenBankTheme()'), 'mu');
+assert.equal(alice.run('chosenBankTheme()'), 'new');
+assert.equal(host.run('JSON.stringify(state)'), beforeThemes);
+alice.run("state.playerName = 'Someone Else'; chooseBankTheme('intel'); state.playerName = 'alice'");
+assert.equal(alice.run('chosenBankTheme()'), 'new');
+alice.run("chooseBankTheme('invalid')");
+assert.equal(alice.run('chosenBankTheme()'), 'new');
+console.log('OK: temas independentes por jogador, persistência por nome e estado financeiro preservado.');
 alice.run(`document.getElementById('prop-name-input').value = 'Avenida';
     document.getElementById('prop-price-input').value = '3000';
     document.getElementById('prop-rent-input').value = '500';

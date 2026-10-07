@@ -58,13 +58,29 @@
         #screen-player .tx-history { flex: none; min-height: 140px; max-height: 240px; scrollbar-width: thin; scrollbar-color: #465260 #161b22; }
         #table-footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px; z-index: 20; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)) !important; background: #0d1117; border-top: 1px solid #30363d; }
         #table-footer button { min-height: 48px; }
-        #godot-game { position:fixed; inset:0; width:100%; height:100%; border:0; z-index:30; opacity:0; pointer-events:none; background:#091219; }
+        #godot-game { position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:100%; border:0; z-index:30; opacity:0; pointer-events:none; background:#101113; }
+        body.godot-ready { background:var(--bank-bg,#101113); }
         body.godot-ready #godot-game { opacity:1; pointer-events:auto; }
         body.godot-ready .container > header, body.godot-ready #screen-lobby, body.godot-ready #screen-player { display:none !important; }
         body.godot-ready .modal { z-index:100; backdrop-filter:blur(12px); background:rgba(5,15,22,0.78); }
-        body.godot-ready .modal-content { background:#14262e; border-color:#35554f; box-shadow:0 24px 90px #0008; }
-        body.godot-ready input, body.godot-ready select { min-height:48px; background:#0d2028; }
-        body.godot-ready button { min-height:48px; }
+        @font-face { font-family:Inter; src:url('assets/fonts/Inter.ttf') format('truetype'); font-weight:100 900; font-display:swap; }
+        @font-face { font-family:NunitoSans; src:url('assets/fonts/NunitoSans.ttf') format('truetype'); font-weight:100 900; font-display:swap; }
+        @font-face { font-family:DMSans; src:url('assets/fonts/DMSans.ttf') format('truetype'); font-weight:100 900; font-display:swap; }
+        @font-face { font-family:Sora; src:url('assets/fonts/Sora.ttf') format('truetype'); font-weight:100 900; font-display:swap; }
+        @font-face { font-family:Manrope; src:url('assets/fonts/Manrope.ttf') format('truetype'); font-weight:100 900; font-display:swap; }
+        body.godot-ready .modal * { font-family:var(--bank-font,Inter,sans-serif); }
+        body.godot-ready .modal-content { background:var(--bank-surface,#1d1f22); color:var(--bank-text,#f8f8fa); border-color:var(--bank-border,#33363c); box-shadow:0 24px 90px #0005; max-height:calc(100dvh - 32px); scrollbar-width:thin; scrollbar-color:var(--bank-border) transparent; }
+        body.godot-ready label { color:var(--bank-muted); }
+        body.godot-ready input, body.godot-ready select { min-height:44px; background:var(--bank-bg); border-color:var(--bank-border); color:var(--bank-text); }
+        body.godot-ready .modal button { min-height:44px; font-size:0.86rem; background:var(--bank-soft); color:var(--bank-text); border-color:var(--bank-border); padding:10px 12px; }
+        body.godot-ready .modal .btn-green, body.godot-ready .modal .btn-blue, body.godot-ready .modal .btn-gold { background:var(--bank-accent); color:var(--bank-accentText); }
+        body.godot-ready[data-bank-theme="new"] .modal .btn-blue { background:linear-gradient(120deg,var(--bank-gradientFrom),var(--bank-gradientTo)); color:white; }
+        .bank-theme-choice { justify-content:space-between; text-align:left; gap:12px; }
+        .bank-theme-choice > span:nth-child(2) { flex:1; min-width:0; }
+        .bank-theme-choice small { display:block; margin-top:3px; font-size:0.74rem; color:var(--bank-muted); font-weight:400; }
+        .bank-theme-choice[aria-pressed="true"] { border-color:var(--choice-accent) !important; box-shadow:0 0 0 1px var(--choice-accent); }
+        .bank-theme-dot { flex:0 0 28px; height:28px; border-radius:9px; }
+        #bank-theme-choices { display:flex; flex-direction:column; gap:9px; }
         @keyframes enter-card {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -300,9 +316,20 @@
                 </div>
             </div>
         </div>
+        <div id="modal-bank-settings" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bank-settings-title">
+            <div class="modal-content">
+                <h3 id="bank-settings-title">Seu banco de brincadeira</h3>
+                <p style="font-size:0.85rem; color:var(--bank-muted);">Escolha o visual do seu aplicativo. Cada jogador escolhe o seu.</p>
+                <div id="bank-theme-choices"></div>
+                <button id="settings-sound" onclick="toggleMoneySound(); renderBankSettings()">Som ligado</button>
+                <button id="settings-leave" onclick="leaveRoom()">Sair da mesa</button>
+                <button id="settings-end" onclick="endGame()">Finalizar partida</button>
+                <button class="btn-blue" onclick="document.getElementById('modal-bank-settings').classList.add('hidden')">Voltar ao jogo</button>
+            </div>
+        </div>
     </div>
 
-    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html" allow="autoplay" loading="eager"></iframe>
+    <iframe id="godot-game" title="Mesa de Banco Imobiliário" src="game/index.html?v=b1acd8a0a1f3" allow="autoplay" loading="eager"></iframe>
     <script>
         // State
         let state = {
@@ -332,14 +359,91 @@
         const clientId = crypto.randomUUID();
         const channel = new BroadcastChannel('banco_imobiliario_channel');
 
+        const BANK_THEMES = {
+            c4: { id: 'c4', name: 'C4 Bank', font: 'Inter', bg: '#101113', surface: '#1d1f22',
+                accent: '#dddfe3', accentText: '#16181c', text: '#f8f8fa', muted: '#a8adb7', border: '#33363c', soft: '#292c31',
+                card: '#25282d', cardText: '#ffffff', positive: '#73d7b0', negative: '#f09999',
+                description: 'Preto, prata e um pouco de pose.' },
+            mu: { id: 'mu', name: 'MuBank', font: 'NunitoSans', bg: '#faf8ff', surface: '#ffffff',
+                accent: '#820ad1', accentText: '#ffffff', text: '#24152f', muted: '#796a85', border: '#eee6f4', soft: '#f1e6fa',
+                card: '#820ad1', cardText: '#ffffff', positive: '#167345', negative: '#b52d48',
+                description: 'O roxinho que só cobra aluguel no tabuleiro.' },
+            intel: { id: 'intel', name: 'Intel Bank', font: 'DMSans', bg: '#fffaf6', surface: '#ffffff',
+                accent: '#f36d00', accentText: '#ffffff', text: '#2b251f', muted: '#81746a', border: '#f1e5db', soft: '#fff0e3',
+                card: '#f36d00', cardText: '#ffffff', positive: '#18764c', negative: '#b42e40',
+                description: 'Laranja por fora. Magnata por dentro.' },
+            new: { id: 'new', name: 'NeoBank', font: 'Manrope', bg: '#f4fbfd', surface: '#ffffff',
+                accent: '#007eae', accentText: '#ffffff', text: '#13394a', muted: '#658592', border: '#deedf1', soft: '#e3f6fb',
+                card: '#0062db', cardText: '#ffffff', gradientFrom: '#0751d7', gradientTo: '#00bfd5', positive: '#177650', negative: '#b4304e',
+                description: 'No azul, até alguém cair na sua avenida.' },
+            nexus: { id: 'nexus', name: 'Nexus Bank', font: 'Sora', bg: '#071712', surface: '#10271e',
+                accent: '#00eb77', accentText: '#04271a', text: '#f0fff7', muted: '#a0b7ac', border: '#244d3b', soft: '#173e2a',
+                card: '#00dd70', cardText: '#05281b', positive: '#66e9a7', negative: '#ff9f9f',
+                description: 'Verde para avançar. Sorte para enriquecer.' }
+        };
+        let appliedBankTheme = '';
+
+        function chosenBankTheme() {
+            let id = localStorage.getItem('companion_bank_theme') || 'c4';
+            try {
+                const choices = JSON.parse(localStorage.getItem('companion_player_themes') || '{}');
+                id = choices[normalizePlayerName(state.playerName || '')] || id;
+            } catch (_) {}
+            return Object.hasOwn(BANK_THEMES, id) ? id : 'c4';
+        }
+
+        function applyBankTheme() {
+            const id = chosenBankTheme();
+            if (id !== appliedBankTheme) {
+                const palette = BANK_THEMES[id];
+                document.body.dataset.bankTheme = id;
+                for (const key of ['bg', 'surface', 'accent', 'accentText', 'text', 'muted', 'border', 'soft', 'card', 'cardText', 'gradientFrom', 'gradientTo']) {
+                    document.body.style.setProperty('--bank-' + key, palette[key]);
+                }
+                document.body.style.setProperty('--bank-font', '"' + palette.font + '", sans-serif');
+                appliedBankTheme = id;
+            }
+            return BANK_THEMES[id];
+        }
+
+        function chooseBankTheme(id) {
+            if (!Object.hasOwn(BANK_THEMES, id)) return;
+            localStorage.setItem('companion_bank_theme', id);
+            let choices = {};
+            try { choices = JSON.parse(localStorage.getItem('companion_player_themes') || '{}'); } catch (_) {}
+            if (state.playerName) choices[normalizePlayerName(state.playerName)] = id;
+            localStorage.setItem('companion_player_themes', JSON.stringify(choices));
+            applyBankTheme();
+            renderBankSettings();
+        }
+
+        function renderBankSettings() {
+            const selected = chosenBankTheme();
+            document.getElementById('bank-theme-choices').innerHTML = Object.values(BANK_THEMES).map(p =>
+                `<button class="bank-theme-choice" data-theme="${p.id}" aria-pressed="${selected === p.id}" onclick="chooseBankTheme('${p.id}')" style="--choice-accent:${p.accent}; font-family:'${p.font}',sans-serif">
+                    <span class="bank-theme-dot" style="background:${p.id === 'new' ? 'linear-gradient(135deg,' + p.gradientFrom + ',' + p.gradientTo + ')' : p.card}"></span><span><b>${p.name}</b><small>${p.description}</small></span><span>${selected === p.id ? '✓' : ''}</span>
+                </button>`).join('');
+            document.getElementById('settings-end').classList.toggle('hidden', !state.isBanker || !state.pin);
+            document.getElementById('settings-leave').classList.toggle('hidden', !state.pin);
+            document.getElementById('settings-sound').innerText = soundEnabled ? 'Som ligado' : 'Som desligado';
+        }
+
+        function openBankSettings() {
+            applyBankTheme();
+            renderBankSettings();
+            document.getElementById('modal-bank-settings').classList.remove('hidden');
+        }
+
         window.companionReady = () => document.body.classList.add('godot-ready');
-        window.companionView = () => JSON.stringify({ state,
+        window.companionView = () => JSON.stringify({ state, bankAppearance: applyBankTheme(),
             status: document.getElementById('conn-status-text').innerText,
-            sound: soundEnabled, reducedMotion: reducedMotion() });
+            sound: soundEnabled, reducedMotion: reducedMotion(), qa: new URLSearchParams(location.search).has('qa') });
         window.companionAction = (action, payload = {}) => {
             unlockMoneyAudio();
             const index = Number(payload.index);
             switch (action) {
+                case 'SETTINGS': openBankSettings(); break;
+                case 'BANK_THEME': chooseBankTheme(payload.id); break;
                 case 'CREATE':
                     document.getElementById('create-banker').value = String(payload.name || '').trim();
                     document.getElementById('create-cash').value = String(payload.cash || '25000');
